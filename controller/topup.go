@@ -101,6 +101,7 @@ func GetTopUpInfo(c *gin.Context) {
 		"enable_creem_topup":               isCreemTopUpEnabled(),
 		"enable_waffo_topup":               enableWaffo,
 		"enable_waffo_pancake_topup":       enableWaffoPancake,
+		"enable_usdt_topup":                isUsdtTopUpEnabled(),
 		"enable_redemption":                complianceConfirmed,
 		"payment_compliance_confirmed":     complianceConfirmed,
 		"payment_compliance_terms_version": operation_setting.CurrentComplianceTermsVersion,
@@ -110,6 +111,15 @@ func GetTopUpInfo(c *gin.Context) {
 			}
 			return nil
 		}(),
+		"usdt_eth_receiver":       setting.UsdtEthReceiver,
+		"usdt_bsc_receiver":       setting.UsdtBscReceiver,
+		"usdt_eth_contract":       setting.UsdtEthContract,
+		"usdt_bsc_contract":       setting.UsdtBscContract,
+		"usdt_eth_decimals":       setting.UsdtEthDecimals,
+		"usdt_bsc_decimals":       setting.UsdtBscDecimals,
+		"usdt_min_topup":          setting.UsdtMinTopUp,
+		"usdt_unit_price":         setting.UsdtUnitPrice,
+		"usdt_timeout_minutes":    setting.UsdtTimeoutMinutes,
 		"creem_products":          setting.CreemProducts,
 		"pay_methods":             payMethods,
 		"min_topup":               operation_setting.MinTopUp,
