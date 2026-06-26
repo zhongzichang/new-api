@@ -125,6 +125,10 @@ var SMTPAccount = ""
 var SMTPFrom = ""
 var SMTPToken = ""
 
+var ResendWorkerUrl = ""
+var ResendWorkerToken = ""
+var ResendWorkerFrom = ""
+
 var GitHubClientId = ""
 var GitHubClientSecret = ""
 var LinuxDOClientId = ""

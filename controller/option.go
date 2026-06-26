@@ -86,7 +86,11 @@ func GetOptions(c *gin.Context) {
 			strings.HasSuffix(k, "Key") ||
 			strings.HasSuffix(k, "secret") ||
 			strings.HasSuffix(k, "api_key")
-		if isSensitiveKey {
+		if isSensitiveKey && value != "" {
+			options = append(options, &model.Option{
+				Key:   k,
+				Value: "***",
+			})
 			continue
 		}
 		options = append(options, &model.Option{

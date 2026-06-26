@@ -279,12 +279,12 @@ func SendEmailVerification(c *gin.Context) {
 
 	if model.IsEmailAlreadyTaken(email) {
 		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": "邮箱地址已被占用",
+			"success": true,
+			"message": "",
 		})
 		return
 	}
-	code := common.GenerateVerificationCode(6)
+	code := common.GenerateVerificationCode(8)
 	common.RegisterVerificationCodeWithKey(email, code, common.EmailVerificationPurpose)
 	subject := fmt.Sprintf("%s邮箱验证邮件", common.SystemName)
 	content := fmt.Sprintf("<p>您好，你正在进行%s邮箱验证。</p>"+

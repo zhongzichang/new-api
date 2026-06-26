@@ -64,6 +64,9 @@ func InitOptionMap() {
 	common.OptionMap["SMTPToken"] = ""
 	common.OptionMap["SMTPSSLEnabled"] = strconv.FormatBool(common.SMTPSSLEnabled)
 	common.OptionMap["SMTPForceAuthLogin"] = strconv.FormatBool(common.SMTPForceAuthLogin)
+	common.OptionMap["ResendWorkerUrl"] = common.ResendWorkerUrl
+	common.OptionMap["ResendWorkerToken"] = ""
+	common.OptionMap["ResendWorkerFrom"] = common.ResendWorkerFrom
 	common.OptionMap["Notice"] = ""
 	common.OptionMap["About"] = ""
 	common.OptionMap["HomePageContent"] = ""
@@ -149,6 +152,20 @@ func InitOptionMap() {
 	common.OptionMap["AudioRatio"] = ratio_setting.AudioRatio2JSONString()
 	common.OptionMap["AudioCompletionRatio"] = ratio_setting.AudioCompletionRatio2JSONString()
 	common.OptionMap["TopUpLink"] = common.TopUpLink
+	common.OptionMap["UsdtEnabled"] = strconv.FormatBool(setting.UsdtEnabled)
+	common.OptionMap["UsdtEthRpcUrl"] = setting.UsdtEthRpcUrl
+	common.OptionMap["UsdtBscRpcUrl"] = setting.UsdtBscRpcUrl
+	common.OptionMap["UsdtEthContract"] = setting.UsdtEthContract
+	common.OptionMap["UsdtBscContract"] = setting.UsdtBscContract
+	common.OptionMap["UsdtEthReceiver"] = setting.UsdtEthReceiver
+	common.OptionMap["UsdtBscReceiver"] = setting.UsdtBscReceiver
+	common.OptionMap["UsdtEthDecimals"] = strconv.Itoa(setting.UsdtEthDecimals)
+	common.OptionMap["UsdtBscDecimals"] = strconv.Itoa(setting.UsdtBscDecimals)
+	common.OptionMap["UsdtMinTopUp"] = strconv.Itoa(setting.UsdtMinTopUp)
+	common.OptionMap["UsdtUnitPrice"] = strconv.FormatFloat(setting.UsdtUnitPrice, 'f', -1, 64)
+	common.OptionMap["UsdtEthConfirmations"] = strconv.Itoa(setting.UsdtEthConfirmations)
+	common.OptionMap["UsdtBscConfirmations"] = strconv.Itoa(setting.UsdtBscConfirmations)
+	common.OptionMap["UsdtTimeoutMinutes"] = strconv.Itoa(setting.UsdtTimeoutMinutes)
 	//common.OptionMap["ChatLink"] = common.ChatLink
 	//common.OptionMap["ChatLink2"] = common.ChatLink2
 	common.OptionMap["QuotaPerUnit"] = strconv.FormatFloat(common.QuotaPerUnit, 'f', -1, 64)
@@ -374,6 +391,12 @@ func updateOptionMap(key string, value string) (err error) {
 		common.SMTPFrom = value
 	case "SMTPToken":
 		common.SMTPToken = value
+	case "ResendWorkerUrl":
+		common.ResendWorkerUrl = value
+	case "ResendWorkerToken":
+		common.ResendWorkerToken = value
+	case "ResendWorkerFrom":
+		common.ResendWorkerFrom = value
 	case "ServerAddress":
 		system_setting.ServerAddress = value
 	case "WorkerUrl":
@@ -542,6 +565,34 @@ func updateOptionMap(key string, value string) (err error) {
 		err = ratio_setting.UpdateAudioCompletionRatioByJSONString(value)
 	case "TopUpLink":
 		common.TopUpLink = value
+	case "UsdtEnabled":
+		setting.UsdtEnabled = value == "true"
+	case "UsdtEthRpcUrl":
+		setting.UsdtEthRpcUrl = value
+	case "UsdtBscRpcUrl":
+		setting.UsdtBscRpcUrl = value
+	case "UsdtEthContract":
+		setting.UsdtEthContract = value
+	case "UsdtBscContract":
+		setting.UsdtBscContract = value
+	case "UsdtEthReceiver":
+		setting.UsdtEthReceiver = value
+	case "UsdtBscReceiver":
+		setting.UsdtBscReceiver = value
+	case "UsdtEthDecimals":
+		setting.UsdtEthDecimals, _ = strconv.Atoi(value)
+	case "UsdtBscDecimals":
+		setting.UsdtBscDecimals, _ = strconv.Atoi(value)
+	case "UsdtMinTopUp":
+		setting.UsdtMinTopUp, _ = strconv.Atoi(value)
+	case "UsdtUnitPrice":
+		setting.UsdtUnitPrice, _ = strconv.ParseFloat(value, 64)
+	case "UsdtEthConfirmations":
+		setting.UsdtEthConfirmations, _ = strconv.Atoi(value)
+	case "UsdtBscConfirmations":
+		setting.UsdtBscConfirmations, _ = strconv.Atoi(value)
+	case "UsdtTimeoutMinutes":
+		setting.UsdtTimeoutMinutes, _ = strconv.Atoi(value)
 	//case "ChatLink":
 	//	common.ChatLink = value
 	//case "ChatLink2":

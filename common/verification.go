@@ -9,13 +9,15 @@ import (
 )
 
 type verificationValue struct {
-	code string
-	time time.Time
+	code     string
+	time     time.Time
+	attempts int
 }
 
 const (
 	EmailVerificationPurpose = "v"
 	PasswordResetPurpose     = "r"
+	MaxVerificationAttempts  = 5
 )
 
 var verificationMutex sync.Mutex
@@ -36,8 +38,9 @@ func RegisterVerificationCodeWithKey(key string, code string, purpose string) {
 	verificationMutex.Lock()
 	defer verificationMutex.Unlock()
 	verificationMap[purpose+key] = verificationValue{
-		code: code,
-		time: time.Now(),
+		code:     code,
+		time:     time.Now(),
+		attempts: 0,
 	}
 	if len(verificationMap) > verificationMapMaxSize {
 		removeExpiredPairs()
@@ -52,6 +55,12 @@ func VerifyCodeWithKey(key string, code string, purpose string) bool {
 	if !okay || int(now.Sub(value.time).Seconds()) >= VerificationValidMinutes*60 {
 		return false
 	}
+	if value.attempts >= MaxVerificationAttempts {
+		delete(verificationMap, purpose+key)
+		return false
+	}
+	value.attempts++
+	verificationMap[purpose+key] = value
 	return code == value.code
 }
 

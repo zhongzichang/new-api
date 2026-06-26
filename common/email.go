@@ -1,9 +1,12 @@
 package common
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
+	"io"
+	"net/http"
 	"net/smtp"
 	"slices"
 	"strings"
@@ -33,7 +36,67 @@ func getSMTPAuth() smtp.Auth {
 	return smtp.PlainAuth("", SMTPAccount, SMTPToken, SMTPServer)
 }
 
+func sendEmailViaResendWorker(subject string, receiver string, content string) error {
+	receivers := strings.Split(receiver, ";")
+	to := make([]string, len(receivers))
+	for i, r := range receivers {
+		to[i] = strings.TrimSpace(r)
+	}
+
+	from := ResendWorkerFrom
+	if from == "" {
+		from = SMTPFrom
+	}
+	if from == "" {
+		from = SMTPAccount
+	}
+	if !strings.Contains(from, "<") && !strings.Contains(from, "@") {
+		// from is not an email address, use as name
+	} else if !strings.Contains(from, "<") {
+		// from is an email address, wrap it
+		from = fmt.Sprintf("%s <%s>", SystemName, from)
+	}
+
+	payload := map[string]interface{}{
+		"from":    from,
+		"to":      to,
+		"subject": subject,
+		"html":    content,
+	}
+
+	jsonData, err := Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal resend worker payload: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", ResendWorkerUrl, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to create resend worker request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", ResendWorkerToken))
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send resend worker request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("resend worker returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
 func SendEmail(subject string, receiver string, content string) error {
+	if ResendWorkerUrl != "" && ResendWorkerToken != "" {
+		return sendEmailViaResendWorker(subject, receiver, content)
+	}
+
 	if SMTPFrom == "" { // for compatibility
 		SMTPFrom = SMTPAccount
 	}
