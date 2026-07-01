@@ -19,6 +19,7 @@ type Pricing struct {
 	ModelName              string                  `json:"model_name"`
 	Description            string                  `json:"description,omitempty"`
 	Icon                   string                  `json:"icon,omitempty"`
+	Avatar                 string                  `json:"avatar,omitempty"`
 	Tags                   string                  `json:"tags,omitempty"`
 	VendorID               int                     `json:"vendor_id,omitempty"`
 	QuotaType              int                     `json:"quota_type"`
@@ -299,10 +300,11 @@ func updatePricing() {
 			if meta.Status != 1 {
 				continue
 			}
-			pricing.Description = meta.Description
-			pricing.Icon = meta.Icon
-			pricing.Tags = meta.Tags
-			pricing.VendorID = meta.VendorID
+		pricing.Description = meta.Description
+		pricing.Icon = meta.Icon
+		pricing.Avatar = meta.Avatar
+		pricing.Tags = meta.Tags
+		pricing.VendorID = meta.VendorID
 		}
 		modelPrice, findPrice := ratio_setting.GetModelPrice(model, false)
 		if findPrice {
