@@ -12,16 +12,19 @@ import (
 )
 
 type TopUp struct {
-	Id              int     `json:"id"`
-	UserId          int     `json:"user_id" gorm:"index"`
-	Amount          int64   `json:"amount"`
-	Money           float64 `json:"money"`
-	TradeNo         string  `json:"trade_no" gorm:"unique;type:varchar(255);index"`
-	PaymentMethod   string  `json:"payment_method" gorm:"type:varchar(50)"`
-	PaymentProvider string  `json:"payment_provider" gorm:"type:varchar(50);default:''"`
-	CreateTime      int64   `json:"create_time"`
-	CompleteTime    int64   `json:"complete_time"`
-	Status          string  `json:"status"`
+	Id                   int     `json:"id"`
+	UserId               int     `json:"user_id" gorm:"index"`
+	Amount               int64   `json:"amount"`
+	Money                float64 `json:"money"`
+	TradeNo              string  `json:"trade_no" gorm:"unique;type:varchar(255);index"`
+	PaymentMethod        string  `json:"payment_method" gorm:"type:varchar(50)"`
+	PaymentProvider      string  `json:"payment_provider" gorm:"type:varchar(50);default:''"`
+	CreateTime           int64   `json:"create_time"`
+	CompleteTime         int64   `json:"complete_time"`
+	Status               string  `json:"status"`
+	TxHash               string  `json:"tx_hash" gorm:"type:varchar(255);default:''"`
+	Confirmations        int     `json:"confirmations" gorm:"default:0"`
+	RequiredConfirmations int    `json:"required_confirmations" gorm:"default:0"`
 }
 
 const (
@@ -61,6 +64,16 @@ func (topUp *TopUp) Update() error {
 	var err error
 	err = DB.Save(topUp).Error
 	return err
+}
+
+func expirePendingTopUps(tx *gorm.DB) error {
+	now := common.GetTimestamp()
+	return tx.Model(&TopUp{}).
+		Where("status = ? AND complete_time > 0 AND complete_time <= ?", common.TopUpStatusPending, now).
+		Updates(map[string]interface{}{
+			"status":        common.TopUpStatusExpired,
+			"complete_time": now,
+		}).Error
 }
 
 func GetTopUpById(id int) *TopUp {
@@ -183,6 +196,11 @@ func GetUserTopUps(userId int, pageInfo *common.PageInfo) (topups []*TopUp, tota
 		}
 	}()
 
+	if err = expirePendingTopUps(tx); err != nil {
+		tx.Rollback()
+		return nil, 0, err
+	}
+
 	cutoff := topUpQueryCutoff()
 
 	// Get total count within transaction
@@ -219,6 +237,11 @@ func GetAllTopUps(pageInfo *common.PageInfo) (topups []*TopUp, total int64, err 
 		}
 	}()
 
+	if err = expirePendingTopUps(tx); err != nil {
+		tx.Rollback()
+		return nil, 0, err
+	}
+
 	if err = tx.Model(&TopUp{}).Count(&total).Error; err != nil {
 		tx.Rollback()
 		return nil, 0, err
@@ -251,6 +274,11 @@ func SearchUserTopUps(userId int, keyword string, pageInfo *common.PageInfo) (to
 			tx.Rollback()
 		}
 	}()
+
+	if err = expirePendingTopUps(tx); err != nil {
+		tx.Rollback()
+		return nil, 0, err
+	}
 
 	query := tx.Model(&TopUp{}).Where("user_id = ? AND create_time >= ?", userId, topUpQueryCutoff())
 	if keyword != "" {
@@ -291,6 +319,11 @@ func SearchAllTopUps(keyword string, pageInfo *common.PageInfo) (topups []*TopUp
 			tx.Rollback()
 		}
 	}()
+
+	if err = expirePendingTopUps(tx); err != nil {
+		tx.Rollback()
+		return nil, 0, err
+	}
 
 	query := tx.Model(&TopUp{})
 	if keyword != "" {

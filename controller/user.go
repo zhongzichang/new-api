@@ -1351,3 +1351,34 @@ func UpdateUserSetting(c *gin.Context) {
 
 	common.ApiSuccessI18n(c, i18n.MsgSettingSaved, nil)
 }
+
+func TestUserNotify(c *gin.Context) {
+	userId := c.GetInt("id")
+	role := c.GetInt("role")
+	if role < common.RoleAdminUser {
+		common.ApiErrorI18n(c, i18n.MsgAuthInsufficientPrivilege)
+		return
+	}
+
+	user, err := model.GetUserById(userId, false)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+
+	userSetting := user.GetSetting()
+	if userSetting.NotifyType == "" {
+		userSetting.NotifyType = dto.NotifyTypeEmail
+	}
+
+	subject := "Notification test"
+	content := "This is a test notification from your API gateway. If you receive this message, your notification settings are configured correctly."
+	notification := dto.NewNotify(dto.NotifyTypeQuotaExceed, subject, content, nil)
+
+	if err := service.NotifyUser(user.Id, user.Email, userSetting, notification); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+
+	common.ApiSuccessI18n(c, i18n.MsgUpdateSuccess, nil)
+}

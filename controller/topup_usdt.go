@@ -46,6 +46,54 @@ type UsdtVerifyRequest struct {
 	TxHash  string `json:"tx_hash"`
 }
 
+type UsdtTxHashRequest struct {
+	TradeNo string `json:"trade_no"`
+	TxHash  string `json:"tx_hash"`
+}
+
+func UpdateUsdtTxHash(c *gin.Context) {
+	var req UsdtTxHashRequest
+	if err := c.ShouldBindJSON(&req); err != nil || req.TradeNo == "" || req.TxHash == "" {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "参数错误"})
+		return
+	}
+
+	topUp := model.GetTopUpByTradeNo(req.TradeNo)
+	if topUp == nil {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值订单不存在"})
+		return
+	}
+
+	userId := c.GetInt("id")
+	if topUp.UserId != userId {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "无权操作该订单"})
+		return
+	}
+
+	if topUp.Status != common.TopUpStatusPending {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值订单状态错误"})
+		return
+	}
+
+	if topUp.PaymentProvider != model.PaymentProviderUsdtEth && topUp.PaymentProvider != model.PaymentProviderUsdtBsc {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "非 USDT 充值订单"})
+		return
+	}
+
+	txHash := strings.TrimSpace(req.TxHash)
+	if !strings.HasPrefix(txHash, "0x") {
+		txHash = "0x" + txHash
+	}
+
+	topUp.TxHash = txHash
+	if err := topUp.Update(); err != nil {
+		logger.LogError(c.Request.Context(), fmt.Sprintf("USDT 更新交易哈希失败 trade_no=%s tx=%s error=%q", req.TradeNo, txHash, err.Error()))
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "更新交易哈希失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "success", "data": "更新成功"})
+}
 func isUsdtTopUpEnabled() bool {
 	if !isPaymentComplianceConfirmed() {
 		return false
@@ -132,7 +180,7 @@ func RequestUsdtAmount(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "success", "data": strconv.FormatFloat(payMoney, 'f', 6, 64)})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "success", "data": strconv.FormatFloat(payMoney, 'f', 6, 64)})
 }
 
 func RequestUsdtPay(c *gin.Context) {
@@ -165,7 +213,7 @@ func RequestUsdtPay(c *gin.Context) {
 		return
 	}
 
-	_, _, receiver, decimals, _ := getUsdtChainConfig(chain)
+	_, _, receiver, decimals, requiredConfirmations := getUsdtChainConfig(chain)
 	if strings.TrimSpace(receiver) == "" {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "该链收款地址未配置"})
 		return
@@ -192,14 +240,15 @@ func RequestUsdtPay(c *gin.Context) {
 
 	tradeNo := fmt.Sprintf("USDT-%s-%d-%d-%s", strings.ToUpper(chain), id, time.Now().UnixMilli(), randstr.String(6))
 	topUp := &model.TopUp{
-		UserId:          id,
-		Amount:          normalizeUsdtAmount(req.Amount),
-		Money:           payMoney,
-		TradeNo:         tradeNo,
-		PaymentMethod:   paymentMethod,
-		PaymentProvider: paymentProvider,
-		CreateTime:      time.Now().Unix(),
-		Status:          common.TopUpStatusPending,
+		UserId:                id,
+		Amount:                normalizeUsdtAmount(req.Amount),
+		Money:                 payMoney,
+		TradeNo:               tradeNo,
+		PaymentMethod:         paymentMethod,
+		PaymentProvider:       paymentProvider,
+		CreateTime:            time.Now().Unix(),
+		Status:                common.TopUpStatusPending,
+		RequiredConfirmations: requiredConfirmations,
 	}
 	if err := topUp.Insert(); err != nil {
 		logger.LogError(c.Request.Context(), fmt.Sprintf("USDT 创建充值订单失败 user_id=%d trade_no=%s amount=%d error=%q", id, tradeNo, req.Amount, err.Error()))
@@ -211,6 +260,7 @@ func RequestUsdtPay(c *gin.Context) {
 	logger.LogInfo(c.Request.Context(), fmt.Sprintf("USDT 充值订单创建成功 user_id=%d trade_no=%s chain=%s amount=%d money=%.6f", id, tradeNo, chain, req.Amount, payMoney))
 
 	c.JSON(http.StatusOK, gin.H{
+		"success": true,
 		"message": "success",
 		"data": gin.H{
 			"trade_no":       tradeNo,
@@ -221,6 +271,45 @@ func RequestUsdtPay(c *gin.Context) {
 			"expires_at":     expiresAt,
 		},
 	})
+}
+
+func CancelUsdtTopUp(c *gin.Context) {
+	var req struct {
+		TradeNo string `json:"trade_no"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || req.TradeNo == "" {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "参数错误"})
+		return
+	}
+
+	userId := c.GetInt("id")
+	topUp := model.GetTopUpByTradeNo(req.TradeNo)
+	if topUp == nil {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值订单不存在"})
+		return
+	}
+	if topUp.UserId != userId {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "无权操作该订单"})
+		return
+	}
+	if topUp.Status != common.TopUpStatusPending {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "订单状态不允许取消"})
+		return
+	}
+	if topUp.PaymentProvider != model.PaymentProviderUsdtEth && topUp.PaymentProvider != model.PaymentProviderUsdtBsc {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "订单类型不支持取消"})
+		return
+	}
+
+	topUp.Status = common.TopUpStatusCancelled
+	if err := topUp.Update(); err != nil {
+		logger.LogError(c.Request.Context(), fmt.Sprintf("USDT 取消订单失败 user_id=%d trade_no=%s error=%q", userId, req.TradeNo, err.Error()))
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "取消订单失败"})
+		return
+	}
+
+	logger.LogInfo(c.Request.Context(), fmt.Sprintf("USDT 取消订单成功 user_id=%d trade_no=%s", userId, req.TradeNo))
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "success", "data": "订单已取消"})
 }
 
 func VerifyUsdtTransaction(c *gin.Context) {
@@ -264,6 +353,16 @@ func VerifyUsdtTransaction(c *gin.Context) {
 		return
 	}
 
+	if topUp.TxHash == "" {
+		topUp.TxHash = txHash
+	}
+	if topUp.Confirmations != confirmations {
+		topUp.Confirmations = confirmations
+		if err := topUp.Update(); err != nil {
+			logger.LogError(c.Request.Context(), fmt.Sprintf("USDT 更新确认数失败 trade_no=%s error=%q", req.TradeNo, err.Error()))
+		}
+	}
+
 	if confirmations < requiredConfirmations {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "error",
@@ -296,7 +395,7 @@ func VerifyUsdtTransaction(c *gin.Context) {
 	}
 
 	logger.LogInfo(c.Request.Context(), fmt.Sprintf("USDT 充值成功 trade_no=%s tx=%s amount=%.6f confirmations=%d", req.TradeNo, txHash, amount, confirmations))
-	c.JSON(http.StatusOK, gin.H{"message": "success", "data": "充值成功"})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "success", "data": "充值成功"})
 }
 
 func verifyUsdtTransferOnChain(ctx context.Context, rpcURL, contractAddress, receiver, txHash string, decimals int) (float64, int, error) {

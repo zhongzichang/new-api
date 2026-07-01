@@ -107,9 +107,12 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.POST("/waffo-pancake/pay", middleware.CriticalRateLimit(), controller.RequestWaffoPancakePay)
 				selfRoute.POST("/usdt/amount", controller.RequestUsdtAmount)
 				selfRoute.POST("/usdt/pay", middleware.CriticalRateLimit(), controller.RequestUsdtPay)
+				selfRoute.POST("/usdt/cancel", middleware.CriticalRateLimit(), controller.CancelUsdtTopUp)
+				selfRoute.POST("/usdt/tx_hash", middleware.CriticalRateLimit(), controller.UpdateUsdtTxHash)
 				selfRoute.POST("/usdt/verify", middleware.CriticalRateLimit(), controller.VerifyUsdtTransaction)
 				selfRoute.POST("/aff_transfer", controller.TransferAffQuota)
 				selfRoute.PUT("/setting", controller.UpdateUserSetting)
+			selfRoute.POST("/notify/test", controller.TestUserNotify)
 
 				// 2FA routes
 				selfRoute.GET("/2fa/status", controller.Get2FAStatus)
