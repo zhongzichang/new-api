@@ -2,8 +2,10 @@ package controller
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"math/big"
 	"net/http"
@@ -20,6 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	troncommon "github.com/fbsobreira/gotron-sdk/pkg/common"
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
 	"github.com/thanhpk/randstr"
@@ -75,7 +78,7 @@ func UpdateUsdcTxHash(c *gin.Context) {
 		return
 	}
 
-	if topUp.PaymentProvider != model.PaymentProviderUsdcEth && topUp.PaymentProvider != model.PaymentProviderUsdcBsc && topUp.PaymentProvider != model.PaymentProviderUsdcBase && topUp.PaymentProvider != model.PaymentProviderUsdcPolygon {
+	if topUp.PaymentProvider != model.PaymentProviderUsdcEth && topUp.PaymentProvider != model.PaymentProviderUsdcBsc && topUp.PaymentProvider != model.PaymentProviderUsdcBase && topUp.PaymentProvider != model.PaymentProviderUsdcPolygon && topUp.PaymentProvider != model.PaymentProviderUsdcTron {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "非 USDC 充值订单"})
 		return
 	}
@@ -101,7 +104,7 @@ func isUsdcTopUpEnabled() bool {
 	if !setting.UsdcEnabled {
 		return false
 	}
-	if strings.TrimSpace(setting.UsdcEthReceiver) == "" && strings.TrimSpace(setting.UsdcBscReceiver) == "" && strings.TrimSpace(setting.UsdcBaseReceiver) == "" && strings.TrimSpace(setting.UsdcPolygonReceiver) == "" {
+	if strings.TrimSpace(setting.UsdcEthReceiver) == "" && strings.TrimSpace(setting.UsdcBscReceiver) == "" && strings.TrimSpace(setting.UsdcBaseReceiver) == "" && strings.TrimSpace(setting.UsdcPolygonReceiver) == "" && strings.TrimSpace(setting.UsdcTronReceiver) == "" {
 		return false
 	}
 	return true
@@ -127,6 +130,12 @@ func getUsdcChainConfig(chain string) (rpcURL, contractAddress, receiver string,
 			setting.UsdcPolygonReceiver,
 			setting.UsdcPolygonDecimals,
 			setting.UsdcPolygonConfirmations
+	case "tron":
+		return setting.UsdcTronRpcUrl,
+			setting.UsdcTronContract,
+			setting.UsdcTronReceiver,
+			setting.UsdcTronDecimals,
+			setting.UsdcTronConfirmations
 	default:
 		return setting.UsdcEthRpcUrl,
 			setting.UsdcEthContract,
@@ -208,7 +217,7 @@ func RequestUsdcPay(c *gin.Context) {
 	}
 
 	chain := strings.ToLower(req.Chain)
-	if chain != "eth" && chain != "bsc" && chain != "base" && chain != "polygon" {
+	if chain != "eth" && chain != "bsc" && chain != "base" && chain != "polygon" && chain != "tron" {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "不支持的链"})
 		return
 	}
@@ -254,6 +263,9 @@ func RequestUsdcPay(c *gin.Context) {
 	} else if chain == "polygon" {
 		paymentMethod = model.PaymentMethodUsdcPolygon
 		paymentProvider = model.PaymentProviderUsdcPolygon
+	} else if chain == "tron" {
+		paymentMethod = model.PaymentMethodUsdcTron
+		paymentProvider = model.PaymentProviderUsdcTron
 	}
 
 	tradeNo := fmt.Sprintf("USDC-%s-%d-%d-%s", strings.ToUpper(chain), id, time.Now().UnixMilli(), randstr.String(6))
@@ -314,7 +326,7 @@ func CancelUsdcTopUp(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "订单状态不允许取消"})
 		return
 	}
-	if topUp.PaymentProvider != model.PaymentProviderUsdcEth && topUp.PaymentProvider != model.PaymentProviderUsdcBsc && topUp.PaymentProvider != model.PaymentProviderUsdcBase && topUp.PaymentProvider != model.PaymentProviderUsdcPolygon {
+	if topUp.PaymentProvider != model.PaymentProviderUsdcEth && topUp.PaymentProvider != model.PaymentProviderUsdcBsc && topUp.PaymentProvider != model.PaymentProviderUsdcBase && topUp.PaymentProvider != model.PaymentProviderUsdcPolygon && topUp.PaymentProvider != model.PaymentProviderUsdcTron {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "订单类型不支持取消"})
 		return
 	}
@@ -355,6 +367,8 @@ func VerifyUsdcTransaction(c *gin.Context) {
 		chain = "base"
 	} else if topUp.PaymentProvider == model.PaymentProviderUsdcPolygon {
 		chain = "polygon"
+	} else if topUp.PaymentProvider == model.PaymentProviderUsdcTron {
+		chain = "tron"
 	}
 
 	rpcURL, contractAddress, receiver, decimals, requiredConfirmations := getUsdcChainConfig(chain)
@@ -364,11 +378,18 @@ func VerifyUsdcTransaction(c *gin.Context) {
 	}
 
 	txHash := strings.TrimSpace(req.TxHash)
-	if !strings.HasPrefix(txHash, "0x") {
-		txHash = "0x" + txHash
-	}
 
-	amount, confirmations, err := verifyUsdcTransferOnChain(context.Background(), rpcURL, contractAddress, receiver, txHash, decimals)
+	var amount float64
+	var confirmations int
+	var err error
+	if chain == "tron" {
+		amount, confirmations, err = verifyUsdcTransferOnTron(rpcURL, contractAddress, receiver, txHash, decimals)
+	} else {
+		if !strings.HasPrefix(txHash, "0x") {
+			txHash = "0x" + txHash
+		}
+		amount, confirmations, err = verifyUsdcTransferOnChain(context.Background(), rpcURL, contractAddress, receiver, txHash, decimals)
+	}
 	if err != nil {
 		logger.LogWarn(c.Request.Context(), fmt.Sprintf("USDC 链上验证失败 trade_no=%s tx=%s error=%q", req.TradeNo, txHash, err.Error()))
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": err.Error()})
@@ -418,6 +439,132 @@ func VerifyUsdcTransaction(c *gin.Context) {
 
 	logger.LogInfo(c.Request.Context(), fmt.Sprintf("USDC 充值成功 trade_no=%s tx=%s amount=%.6f confirmations=%d", req.TradeNo, txHash, amount, confirmations))
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "success", "data": "充值成功"})
+}
+
+func verifyUsdcTransferOnTron(apiURL, contractAddress, receiver, txHash string, decimals int) (float64, int, error) {
+	if strings.TrimSpace(apiURL) == "" {
+		apiURL = "https://api.trongrid.io"
+	}
+	txHash = strings.TrimSpace(txHash)
+	if txHash == "" {
+		return 0, 0, errors.New("交易哈希为空")
+	}
+
+	infoURL := fmt.Sprintf("%s/wallet/gettransactioninfobyid", strings.TrimRight(apiURL, "/"))
+	infoBody := fmt.Sprintf(`{"value":"%s"}`, txHash)
+	infoReq, err := http.NewRequest(http.MethodPost, infoURL, strings.NewReader(infoBody))
+	if err != nil {
+		return 0, 0, fmt.Errorf("构建交易信息请求失败: %w", err)
+	}
+	infoReq.Header.Set("Content-Type", "application/json")
+	infoReq.Header.Set("Accept", "application/json")
+	infoResp, err := http.DefaultClient.Do(infoReq)
+	if err != nil {
+		return 0, 0, fmt.Errorf("查询交易信息失败: %w", err)
+	}
+	defer infoResp.Body.Close()
+	infoRespBody, _ := io.ReadAll(infoResp.Body)
+	if infoResp.StatusCode != http.StatusOK {
+		return 0, 0, fmt.Errorf("查询交易信息失败: status=%d", infoResp.StatusCode)
+	}
+	var txInfo struct {
+		ID          string `json:"id"`
+		BlockNumber int64  `json:"blockNumber"`
+		Receipt     struct {
+			Result string `json:"result"`
+		} `json:"receipt"`
+		Log []struct {
+			Address string   `json:"address"`
+			Topics  []string `json:"topics"`
+			Data    string   `json:"data"`
+		} `json:"log"`
+	}
+	if err := common.UnmarshalJsonStr(string(infoRespBody), &txInfo); err != nil {
+		return 0, 0, fmt.Errorf("解析交易信息失败: %w", err)
+	}
+	if txInfo.ID == "" {
+		return 0, 0, errors.New("交易不存在")
+	}
+	if txInfo.Receipt.Result != "SUCCESS" {
+		return 0, 0, errors.New("交易执行失败")
+	}
+
+	receiverBytes, err := troncommon.DecodeCheck(receiver)
+	if err != nil {
+		return 0, 0, fmt.Errorf("收款地址解析失败: %w", err)
+	}
+	receiverHex := hex.EncodeToString(receiverBytes[1:])
+	contractBytes, err := troncommon.DecodeCheck(contractAddress)
+	if err != nil {
+		return 0, 0, fmt.Errorf("合约地址解析失败: %w", err)
+	}
+	contractHex := hex.EncodeToString(contractBytes[1:])
+
+	transferSig := hex.EncodeToString(usdcABI.Events["Transfer"].ID.Bytes())
+	var matchedAmount *big.Int
+	for _, l := range txInfo.Log {
+		if !strings.EqualFold(l.Address, contractHex) {
+			continue
+		}
+		if len(l.Topics) < 3 {
+			continue
+		}
+		if !strings.EqualFold(strings.TrimPrefix(l.Topics[0], "0x"), transferSig) {
+			continue
+		}
+		toTopic := strings.TrimPrefix(l.Topics[2], "0x")
+		if len(toTopic) < 40 {
+			continue
+		}
+		toAddr := toTopic[len(toTopic)-40:]
+		if !strings.EqualFold(toAddr, receiverHex) {
+			continue
+		}
+		data := strings.TrimPrefix(l.Data, "0x")
+		value, ok := new(big.Int).SetString(data, 16)
+		if !ok {
+			continue
+		}
+		matchedAmount = value
+		break
+	}
+	if matchedAmount == nil {
+		return 0, 0, errors.New("未找到向指定收款地址的 USDC 转账")
+	}
+
+	nowBlockURL := fmt.Sprintf("%s/wallet/getnowblock", strings.TrimRight(apiURL, "/"))
+	nowReq, err := http.NewRequest(http.MethodPost, nowBlockURL, nil)
+	if err != nil {
+		return 0, 0, fmt.Errorf("构建当前区块请求失败: %w", err)
+	}
+	nowReq.Header.Set("Accept", "application/json")
+	nowResp, err := http.DefaultClient.Do(nowReq)
+	if err != nil {
+		return 0, 0, fmt.Errorf("查询当前区块失败: %w", err)
+	}
+	defer nowResp.Body.Close()
+	nowRespBody, _ := io.ReadAll(nowResp.Body)
+	if nowResp.StatusCode != http.StatusOK {
+		return 0, 0, fmt.Errorf("查询当前区块失败: status=%d", nowResp.StatusCode)
+	}
+	var nowBlock struct {
+		BlockHeader struct {
+			RawData struct {
+				Number int64 `json:"number"`
+			} `json:"raw_data"`
+		} `json:"block_header"`
+	}
+	if err := common.UnmarshalJsonStr(string(nowRespBody), &nowBlock); err != nil {
+		return 0, 0, fmt.Errorf("解析当前区块失败: %w", err)
+	}
+	confirmations := int(nowBlock.BlockHeader.RawData.Number - txInfo.BlockNumber)
+	if confirmations < 0 {
+		confirmations = 0
+	}
+
+	divisor := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimals)), nil)
+	amountFloat, _ := new(big.Rat).SetFrac(matchedAmount, divisor).Float64()
+	return amountFloat, confirmations, nil
 }
 
 func verifyUsdcTransferOnChain(ctx context.Context, rpcURL, contractAddress, receiver, txHash string, decimals int) (float64, int, error) {

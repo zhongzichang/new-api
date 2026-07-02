@@ -157,48 +157,58 @@ func InitOptionMap() {
 	common.OptionMap["UsdtBscRpcUrl"] = setting.UsdtBscRpcUrl
 	common.OptionMap["UsdtBaseRpcUrl"] = setting.UsdtBaseRpcUrl
 	common.OptionMap["UsdtPolygonRpcUrl"] = setting.UsdtPolygonRpcUrl
+	common.OptionMap["UsdtTronRpcUrl"] = setting.UsdtTronRpcUrl
 	common.OptionMap["UsdtEthContract"] = setting.UsdtEthContract
 	common.OptionMap["UsdtBscContract"] = setting.UsdtBscContract
 	common.OptionMap["UsdtBaseContract"] = setting.UsdtBaseContract
 	common.OptionMap["UsdtPolygonContract"] = setting.UsdtPolygonContract
+	common.OptionMap["UsdtTronContract"] = setting.UsdtTronContract
 	common.OptionMap["UsdtEthReceiver"] = setting.UsdtEthReceiver
 	common.OptionMap["UsdtBscReceiver"] = setting.UsdtBscReceiver
 	common.OptionMap["UsdtBaseReceiver"] = setting.UsdtBaseReceiver
 	common.OptionMap["UsdtPolygonReceiver"] = setting.UsdtPolygonReceiver
+	common.OptionMap["UsdtTronReceiver"] = setting.UsdtTronReceiver
 	common.OptionMap["UsdtEthDecimals"] = strconv.Itoa(setting.UsdtEthDecimals)
 	common.OptionMap["UsdtBscDecimals"] = strconv.Itoa(setting.UsdtBscDecimals)
 	common.OptionMap["UsdtBaseDecimals"] = strconv.Itoa(setting.UsdtBaseDecimals)
 	common.OptionMap["UsdtPolygonDecimals"] = strconv.Itoa(setting.UsdtPolygonDecimals)
+	common.OptionMap["UsdtTronDecimals"] = strconv.Itoa(setting.UsdtTronDecimals)
 	common.OptionMap["UsdtMinTopUp"] = strconv.Itoa(setting.UsdtMinTopUp)
 	common.OptionMap["UsdtUnitPrice"] = strconv.FormatFloat(setting.UsdtUnitPrice, 'f', -1, 64)
 	common.OptionMap["UsdtEthConfirmations"] = strconv.Itoa(setting.UsdtEthConfirmations)
 	common.OptionMap["UsdtBscConfirmations"] = strconv.Itoa(setting.UsdtBscConfirmations)
 	common.OptionMap["UsdtBaseConfirmations"] = strconv.Itoa(setting.UsdtBaseConfirmations)
 	common.OptionMap["UsdtPolygonConfirmations"] = strconv.Itoa(setting.UsdtPolygonConfirmations)
+	common.OptionMap["UsdtTronConfirmations"] = strconv.Itoa(setting.UsdtTronConfirmations)
 	common.OptionMap["UsdtTimeoutMinutes"] = strconv.Itoa(setting.UsdtTimeoutMinutes)
 	common.OptionMap["UsdcEnabled"] = strconv.FormatBool(setting.UsdcEnabled)
 	common.OptionMap["UsdcEthRpcUrl"] = setting.UsdcEthRpcUrl
 	common.OptionMap["UsdcBscRpcUrl"] = setting.UsdcBscRpcUrl
 	common.OptionMap["UsdcBaseRpcUrl"] = setting.UsdcBaseRpcUrl
 	common.OptionMap["UsdcPolygonRpcUrl"] = setting.UsdcPolygonRpcUrl
+	common.OptionMap["UsdcTronRpcUrl"] = setting.UsdcTronRpcUrl
 	common.OptionMap["UsdcEthContract"] = setting.UsdcEthContract
 	common.OptionMap["UsdcBscContract"] = setting.UsdcBscContract
 	common.OptionMap["UsdcBaseContract"] = setting.UsdcBaseContract
 	common.OptionMap["UsdcPolygonContract"] = setting.UsdcPolygonContract
+	common.OptionMap["UsdcTronContract"] = setting.UsdcTronContract
 	common.OptionMap["UsdcEthReceiver"] = setting.UsdcEthReceiver
 	common.OptionMap["UsdcBscReceiver"] = setting.UsdcBscReceiver
 	common.OptionMap["UsdcBaseReceiver"] = setting.UsdcBaseReceiver
 	common.OptionMap["UsdcPolygonReceiver"] = setting.UsdcPolygonReceiver
+	common.OptionMap["UsdcTronReceiver"] = setting.UsdcTronReceiver
 	common.OptionMap["UsdcEthDecimals"] = strconv.Itoa(setting.UsdcEthDecimals)
 	common.OptionMap["UsdcBscDecimals"] = strconv.Itoa(setting.UsdcBscDecimals)
 	common.OptionMap["UsdcBaseDecimals"] = strconv.Itoa(setting.UsdcBaseDecimals)
 	common.OptionMap["UsdcPolygonDecimals"] = strconv.Itoa(setting.UsdcPolygonDecimals)
+	common.OptionMap["UsdcTronDecimals"] = strconv.Itoa(setting.UsdcTronDecimals)
 	common.OptionMap["UsdcMinTopUp"] = strconv.Itoa(setting.UsdcMinTopUp)
 	common.OptionMap["UsdcUnitPrice"] = strconv.FormatFloat(setting.UsdcUnitPrice, 'f', -1, 64)
 	common.OptionMap["UsdcEthConfirmations"] = strconv.Itoa(setting.UsdcEthConfirmations)
 	common.OptionMap["UsdcBscConfirmations"] = strconv.Itoa(setting.UsdcBscConfirmations)
 	common.OptionMap["UsdcBaseConfirmations"] = strconv.Itoa(setting.UsdcBaseConfirmations)
 	common.OptionMap["UsdcPolygonConfirmations"] = strconv.Itoa(setting.UsdcPolygonConfirmations)
+	common.OptionMap["UsdcTronConfirmations"] = strconv.Itoa(setting.UsdcTronConfirmations)
 	common.OptionMap["UsdcTimeoutMinutes"] = strconv.Itoa(setting.UsdcTimeoutMinutes)
 	//common.OptionMap["ChatLink"] = common.ChatLink
 	//common.OptionMap["ChatLink2"] = common.ChatLink2
@@ -609,6 +619,8 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.UsdtBaseRpcUrl = value
 	case "UsdtPolygonRpcUrl":
 		setting.UsdtPolygonRpcUrl = value
+	case "UsdtTronRpcUrl":
+		setting.UsdtTronRpcUrl = value
 	case "UsdtEthContract":
 		setting.UsdtEthContract = value
 	case "UsdtBscContract":
@@ -617,6 +629,8 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.UsdtBaseContract = value
 	case "UsdtPolygonContract":
 		setting.UsdtPolygonContract = value
+	case "UsdtTronContract":
+		setting.UsdtTronContract = value
 	case "UsdtEthReceiver":
 		setting.UsdtEthReceiver = value
 	case "UsdtBscReceiver":
@@ -625,6 +639,8 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.UsdtBaseReceiver = value
 	case "UsdtPolygonReceiver":
 		setting.UsdtPolygonReceiver = value
+	case "UsdtTronReceiver":
+		setting.UsdtTronReceiver = value
 	case "UsdtEthDecimals":
 		setting.UsdtEthDecimals, _ = strconv.Atoi(value)
 	case "UsdtBscDecimals":
@@ -633,6 +649,8 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.UsdtBaseDecimals, _ = strconv.Atoi(value)
 	case "UsdtPolygonDecimals":
 		setting.UsdtPolygonDecimals, _ = strconv.Atoi(value)
+	case "UsdtTronDecimals":
+		setting.UsdtTronDecimals, _ = strconv.Atoi(value)
 	case "UsdtMinTopUp":
 		setting.UsdtMinTopUp, _ = strconv.Atoi(value)
 	case "UsdtUnitPrice":
@@ -645,6 +663,8 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.UsdtBaseConfirmations, _ = strconv.Atoi(value)
 	case "UsdtPolygonConfirmations":
 		setting.UsdtPolygonConfirmations, _ = strconv.Atoi(value)
+	case "UsdtTronConfirmations":
+		setting.UsdtTronConfirmations, _ = strconv.Atoi(value)
 	case "UsdtTimeoutMinutes":
 		setting.UsdtTimeoutMinutes, _ = strconv.Atoi(value)
 	case "UsdcEnabled":
@@ -657,6 +677,8 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.UsdcBaseRpcUrl = value
 	case "UsdcPolygonRpcUrl":
 		setting.UsdcPolygonRpcUrl = value
+	case "UsdcTronRpcUrl":
+		setting.UsdcTronRpcUrl = value
 	case "UsdcEthContract":
 		setting.UsdcEthContract = value
 	case "UsdcBscContract":
@@ -665,6 +687,8 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.UsdcBaseContract = value
 	case "UsdcPolygonContract":
 		setting.UsdcPolygonContract = value
+	case "UsdcTronContract":
+		setting.UsdcTronContract = value
 	case "UsdcEthReceiver":
 		setting.UsdcEthReceiver = value
 	case "UsdcBscReceiver":
@@ -673,6 +697,8 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.UsdcBaseReceiver = value
 	case "UsdcPolygonReceiver":
 		setting.UsdcPolygonReceiver = value
+	case "UsdcTronReceiver":
+		setting.UsdcTronReceiver = value
 	case "UsdcEthDecimals":
 		setting.UsdcEthDecimals, _ = strconv.Atoi(value)
 	case "UsdcBscDecimals":
@@ -681,6 +707,8 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.UsdcBaseDecimals, _ = strconv.Atoi(value)
 	case "UsdcPolygonDecimals":
 		setting.UsdcPolygonDecimals, _ = strconv.Atoi(value)
+	case "UsdcTronDecimals":
+		setting.UsdcTronDecimals, _ = strconv.Atoi(value)
 	case "UsdcMinTopUp":
 		setting.UsdcMinTopUp, _ = strconv.Atoi(value)
 	case "UsdcUnitPrice":
@@ -693,6 +721,8 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.UsdcBaseConfirmations, _ = strconv.Atoi(value)
 	case "UsdcPolygonConfirmations":
 		setting.UsdcPolygonConfirmations, _ = strconv.Atoi(value)
+	case "UsdcTronConfirmations":
+		setting.UsdcTronConfirmations, _ = strconv.Atoi(value)
 	case "UsdcTimeoutMinutes":
 		setting.UsdcTimeoutMinutes, _ = strconv.Atoi(value)
 	case "ChannelDisableThreshold":
