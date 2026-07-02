@@ -9,7 +9,7 @@ var (
 	UsdcEthReceiver     string
 	UsdcBscReceiver     string
 	UsdcEthDecimals     int    = 6
-	UsdcBscDecimals     int    = 18
+	UsdcBscDecimals     int    = 6
 	UsdcMinTopUp        int    = 1
 	UsdcUnitPrice       float64 = 1.0
 	UsdcEthConfirmations       = 3
