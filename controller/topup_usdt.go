@@ -75,7 +75,7 @@ func UpdateUsdtTxHash(c *gin.Context) {
 		return
 	}
 
-	if topUp.PaymentProvider != model.PaymentProviderUsdtEth && topUp.PaymentProvider != model.PaymentProviderUsdtBsc {
+	if topUp.PaymentProvider != model.PaymentProviderUsdtEth && topUp.PaymentProvider != model.PaymentProviderUsdtBsc && topUp.PaymentProvider != model.PaymentProviderUsdtBase {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "非 USDT 充值订单"})
 		return
 	}
@@ -101,7 +101,7 @@ func isUsdtTopUpEnabled() bool {
 	if !setting.UsdtEnabled {
 		return false
 	}
-	if strings.TrimSpace(setting.UsdtEthReceiver) == "" && strings.TrimSpace(setting.UsdtBscReceiver) == "" {
+	if strings.TrimSpace(setting.UsdtEthReceiver) == "" && strings.TrimSpace(setting.UsdtBscReceiver) == "" && strings.TrimSpace(setting.UsdtBaseReceiver) == "" {
 		return false
 	}
 	return true
@@ -115,6 +115,12 @@ func getUsdtChainConfig(chain string) (rpcURL, contractAddress, receiver string,
 			setting.UsdtBscReceiver,
 			setting.UsdtBscDecimals,
 			setting.UsdtBscConfirmations
+	case "base":
+		return setting.UsdtBaseRpcUrl,
+			setting.UsdtBaseContract,
+			setting.UsdtBaseReceiver,
+			setting.UsdtBaseDecimals,
+			setting.UsdtBaseConfirmations
 	default:
 		return setting.UsdtEthRpcUrl,
 			setting.UsdtEthContract,
@@ -196,7 +202,7 @@ func RequestUsdtPay(c *gin.Context) {
 	}
 
 	chain := strings.ToLower(req.Chain)
-	if chain != "eth" && chain != "bsc" {
+	if chain != "eth" && chain != "bsc" && chain != "base" {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "不支持的链"})
 		return
 	}
@@ -236,6 +242,9 @@ func RequestUsdtPay(c *gin.Context) {
 	if chain == "bsc" {
 		paymentMethod = model.PaymentMethodUsdtBsc
 		paymentProvider = model.PaymentProviderUsdtBsc
+	} else if chain == "base" {
+		paymentMethod = model.PaymentMethodUsdtBase
+		paymentProvider = model.PaymentProviderUsdtBase
 	}
 
 	tradeNo := fmt.Sprintf("USDT-%s-%d-%d-%s", strings.ToUpper(chain), id, time.Now().UnixMilli(), randstr.String(6))
@@ -296,7 +305,7 @@ func CancelUsdtTopUp(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "订单状态不允许取消"})
 		return
 	}
-	if topUp.PaymentProvider != model.PaymentProviderUsdtEth && topUp.PaymentProvider != model.PaymentProviderUsdtBsc {
+	if topUp.PaymentProvider != model.PaymentProviderUsdtEth && topUp.PaymentProvider != model.PaymentProviderUsdtBsc && topUp.PaymentProvider != model.PaymentProviderUsdtBase {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "订单类型不支持取消"})
 		return
 	}
@@ -333,6 +342,8 @@ func VerifyUsdtTransaction(c *gin.Context) {
 	chain := "eth"
 	if topUp.PaymentProvider == model.PaymentProviderUsdtBsc {
 		chain = "bsc"
+	} else if topUp.PaymentProvider == model.PaymentProviderUsdtBase {
+		chain = "base"
 	}
 
 	rpcURL, contractAddress, receiver, decimals, requiredConfirmations := getUsdtChainConfig(chain)

@@ -35,8 +35,10 @@ const (
 	PaymentMethodBalance      = "balance"
 	PaymentMethodUsdtEth      = "usdt_eth"
 	PaymentMethodUsdtBsc      = "usdt_bsc"
+	PaymentMethodUsdtBase     = "usdt_base"
 	PaymentMethodUsdcEth      = "usdc_eth"
 	PaymentMethodUsdcBsc      = "usdc_bsc"
+	PaymentMethodUsdcBase     = "usdc_base"
 )
 
 const (
@@ -48,8 +50,10 @@ const (
 	PaymentProviderBalance      = "balance"
 	PaymentProviderUsdtEth      = "usdt_eth"
 	PaymentProviderUsdtBsc      = "usdt_bsc"
+	PaymentProviderUsdtBase     = "usdt_base"
 	PaymentProviderUsdcEth      = "usdc_eth"
 	PaymentProviderUsdcBsc      = "usdc_bsc"
+	PaymentProviderUsdcBase     = "usdc_base"
 )
 
 var (
@@ -647,7 +651,7 @@ func RechargeUsdt(tradeNo string, txHash string, callerIp string) error {
 			return errors.New("充值订单不存在")
 		}
 
-	if topUp.PaymentProvider != PaymentProviderUsdtEth && topUp.PaymentProvider != PaymentProviderUsdtBsc && topUp.PaymentProvider != PaymentProviderUsdcEth && topUp.PaymentProvider != PaymentProviderUsdcBsc {
+		if topUp.PaymentProvider != PaymentProviderUsdtEth && topUp.PaymentProvider != PaymentProviderUsdtBsc && topUp.PaymentProvider != PaymentProviderUsdtBase && topUp.PaymentProvider != PaymentProviderUsdcEth && topUp.PaymentProvider != PaymentProviderUsdcBsc && topUp.PaymentProvider != PaymentProviderUsdcBase {
 		return ErrPaymentMethodMismatch
 	}
 
@@ -709,7 +713,7 @@ func RechargeUsdc(tradeNo string, txHash string, callerIp string) error {
 			return errors.New("充值订单不存在")
 		}
 
-		if topUp.PaymentProvider != PaymentProviderUsdcEth && topUp.PaymentProvider != PaymentProviderUsdcBsc {
+		if topUp.PaymentProvider != PaymentProviderUsdcEth && topUp.PaymentProvider != PaymentProviderUsdcBsc && topUp.PaymentProvider != PaymentProviderUsdcBase {
 			return ErrPaymentMethodMismatch
 		}
 

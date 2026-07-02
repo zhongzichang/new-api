@@ -75,7 +75,7 @@ func UpdateUsdcTxHash(c *gin.Context) {
 		return
 	}
 
-	if topUp.PaymentProvider != model.PaymentProviderUsdcEth && topUp.PaymentProvider != model.PaymentProviderUsdcBsc {
+	if topUp.PaymentProvider != model.PaymentProviderUsdcEth && topUp.PaymentProvider != model.PaymentProviderUsdcBsc && topUp.PaymentProvider != model.PaymentProviderUsdcBase {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "非 USDC 充值订单"})
 		return
 	}
@@ -101,7 +101,7 @@ func isUsdcTopUpEnabled() bool {
 	if !setting.UsdcEnabled {
 		return false
 	}
-	if strings.TrimSpace(setting.UsdcEthReceiver) == "" && strings.TrimSpace(setting.UsdcBscReceiver) == "" {
+	if strings.TrimSpace(setting.UsdcEthReceiver) == "" && strings.TrimSpace(setting.UsdcBscReceiver) == "" && strings.TrimSpace(setting.UsdcBaseReceiver) == "" {
 		return false
 	}
 	return true
@@ -115,6 +115,12 @@ func getUsdcChainConfig(chain string) (rpcURL, contractAddress, receiver string,
 			setting.UsdcBscReceiver,
 			setting.UsdcBscDecimals,
 			setting.UsdcBscConfirmations
+	case "base":
+		return setting.UsdcBaseRpcUrl,
+			setting.UsdcBaseContract,
+			setting.UsdcBaseReceiver,
+			setting.UsdcBaseDecimals,
+			setting.UsdcBaseConfirmations
 	default:
 		return setting.UsdcEthRpcUrl,
 			setting.UsdcEthContract,
@@ -196,7 +202,7 @@ func RequestUsdcPay(c *gin.Context) {
 	}
 
 	chain := strings.ToLower(req.Chain)
-	if chain != "eth" && chain != "bsc" {
+	if chain != "eth" && chain != "bsc" && chain != "base" {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "不支持的链"})
 		return
 	}
@@ -236,6 +242,9 @@ func RequestUsdcPay(c *gin.Context) {
 	if chain == "bsc" {
 		paymentMethod = model.PaymentMethodUsdcBsc
 		paymentProvider = model.PaymentProviderUsdcBsc
+	} else if chain == "base" {
+		paymentMethod = model.PaymentMethodUsdcBase
+		paymentProvider = model.PaymentProviderUsdcBase
 	}
 
 	tradeNo := fmt.Sprintf("USDC-%s-%d-%d-%s", strings.ToUpper(chain), id, time.Now().UnixMilli(), randstr.String(6))
@@ -296,7 +305,7 @@ func CancelUsdcTopUp(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "订单状态不允许取消"})
 		return
 	}
-	if topUp.PaymentProvider != model.PaymentProviderUsdcEth && topUp.PaymentProvider != model.PaymentProviderUsdcBsc {
+	if topUp.PaymentProvider != model.PaymentProviderUsdcEth && topUp.PaymentProvider != model.PaymentProviderUsdcBsc && topUp.PaymentProvider != model.PaymentProviderUsdcBase {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "订单类型不支持取消"})
 		return
 	}
@@ -333,6 +342,8 @@ func VerifyUsdcTransaction(c *gin.Context) {
 	chain := "eth"
 	if topUp.PaymentProvider == model.PaymentProviderUsdcBsc {
 		chain = "bsc"
+	} else if topUp.PaymentProvider == model.PaymentProviderUsdcBase {
+		chain = "base"
 	}
 
 	rpcURL, contractAddress, receiver, decimals, requiredConfirmations := getUsdcChainConfig(chain)
