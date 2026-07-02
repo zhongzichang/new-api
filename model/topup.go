@@ -36,9 +36,11 @@ const (
 	PaymentMethodUsdtEth      = "usdt_eth"
 	PaymentMethodUsdtBsc      = "usdt_bsc"
 	PaymentMethodUsdtBase     = "usdt_base"
+	PaymentMethodUsdtPolygon  = "usdt_polygon"
 	PaymentMethodUsdcEth      = "usdc_eth"
 	PaymentMethodUsdcBsc      = "usdc_bsc"
 	PaymentMethodUsdcBase     = "usdc_base"
+	PaymentMethodUsdcPolygon  = "usdc_polygon"
 )
 
 const (
@@ -51,9 +53,11 @@ const (
 	PaymentProviderUsdtEth      = "usdt_eth"
 	PaymentProviderUsdtBsc      = "usdt_bsc"
 	PaymentProviderUsdtBase     = "usdt_base"
+	PaymentProviderUsdtPolygon  = "usdt_polygon"
 	PaymentProviderUsdcEth      = "usdc_eth"
 	PaymentProviderUsdcBsc      = "usdc_bsc"
 	PaymentProviderUsdcBase     = "usdc_base"
+	PaymentProviderUsdcPolygon  = "usdc_polygon"
 )
 
 var (
@@ -651,7 +655,7 @@ func RechargeUsdt(tradeNo string, txHash string, callerIp string) error {
 			return errors.New("充值订单不存在")
 		}
 
-		if topUp.PaymentProvider != PaymentProviderUsdtEth && topUp.PaymentProvider != PaymentProviderUsdtBsc && topUp.PaymentProvider != PaymentProviderUsdtBase && topUp.PaymentProvider != PaymentProviderUsdcEth && topUp.PaymentProvider != PaymentProviderUsdcBsc && topUp.PaymentProvider != PaymentProviderUsdcBase {
+		if topUp.PaymentProvider != PaymentProviderUsdtEth && topUp.PaymentProvider != PaymentProviderUsdtBsc && topUp.PaymentProvider != PaymentProviderUsdtBase && topUp.PaymentProvider != PaymentProviderUsdtPolygon && topUp.PaymentProvider != PaymentProviderUsdcEth && topUp.PaymentProvider != PaymentProviderUsdcBsc && topUp.PaymentProvider != PaymentProviderUsdcBase && topUp.PaymentProvider != PaymentProviderUsdcPolygon {
 		return ErrPaymentMethodMismatch
 	}
 
@@ -713,7 +717,7 @@ func RechargeUsdc(tradeNo string, txHash string, callerIp string) error {
 			return errors.New("充值订单不存在")
 		}
 
-		if topUp.PaymentProvider != PaymentProviderUsdcEth && topUp.PaymentProvider != PaymentProviderUsdcBsc && topUp.PaymentProvider != PaymentProviderUsdcBase {
+		if topUp.PaymentProvider != PaymentProviderUsdcEth && topUp.PaymentProvider != PaymentProviderUsdcBsc && topUp.PaymentProvider != PaymentProviderUsdcBase && topUp.PaymentProvider != PaymentProviderUsdcPolygon {
 			return ErrPaymentMethodMismatch
 		}
 
