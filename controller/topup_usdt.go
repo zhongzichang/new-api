@@ -90,7 +90,7 @@ func UpdateUsdtTxHash(c *gin.Context) {
 
 	topUp.TxHash = txHash
 	if err := topUp.Update(); err != nil {
-		logger.LogError(c.Request.Context(), fmt.Sprintf("USDT 更新交易哈希失败 trade_no=%s tx=%s error=%q", req.TradeNo, txHash, err.Error()))
+		logger.LogError(c.Request.Context(), fmt.Sprintf("USDT Failed to update tx hash trade_no=%s tx=%s error=%q", req.TradeNo, txHash, err.Error()))
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Failed to update transaction hash"})
 		return
 	}
@@ -281,13 +281,13 @@ func RequestUsdtPay(c *gin.Context) {
 		RequiredConfirmations: requiredConfirmations,
 	}
 	if err := topUp.Insert(); err != nil {
-		logger.LogError(c.Request.Context(), fmt.Sprintf("USDT 创建充值订单失败 user_id=%d trade_no=%s amount=%d error=%q", id, tradeNo, req.Amount, err.Error()))
+		logger.LogError(c.Request.Context(), fmt.Sprintf("USDT Failed to create top-up order user_id=%d trade_no=%s amount=%d error=%q", id, tradeNo, req.Amount, err.Error()))
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Failed to create order"})
 		return
 	}
 
 	expiresAt := time.Now().Add(time.Duration(setting.UsdtTimeoutMinutes) * time.Minute).Unix()
-	logger.LogInfo(c.Request.Context(), fmt.Sprintf("USDT 充值订单创建成功 user_id=%d trade_no=%s chain=%s amount=%d money=%.6f", id, tradeNo, chain, req.Amount, payMoney))
+	logger.LogInfo(c.Request.Context(), fmt.Sprintf("USDT Top-up order created successfully user_id=%d trade_no=%s chain=%s amount=%d money=%.6f", id, tradeNo, chain, req.Amount, payMoney))
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -333,12 +333,12 @@ func CancelUsdtTopUp(c *gin.Context) {
 
 	topUp.Status = common.TopUpStatusCancelled
 	if err := topUp.Update(); err != nil {
-		logger.LogError(c.Request.Context(), fmt.Sprintf("USDT 取消订单失败 user_id=%d trade_no=%s error=%q", userId, req.TradeNo, err.Error()))
+		logger.LogError(c.Request.Context(), fmt.Sprintf("USDT Failed to cancel order user_id=%d trade_no=%s error=%q", userId, req.TradeNo, err.Error()))
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Failed to cancel order"})
 		return
 	}
 
-	logger.LogInfo(c.Request.Context(), fmt.Sprintf("USDT 取消订单成功 user_id=%d trade_no=%s", userId, req.TradeNo))
+	logger.LogInfo(c.Request.Context(), fmt.Sprintf("USDT Order cancelled successfully user_id=%d trade_no=%s", userId, req.TradeNo))
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "success", "data": "Order cancelled"})
 }
 
@@ -391,7 +391,7 @@ func VerifyUsdtTransaction(c *gin.Context) {
 		amount, confirmations, err = verifyUsdtTransferOnChain(context.Background(), rpcURL, contractAddress, receiver, txHash, decimals)
 	}
 	if err != nil {
-		logger.LogWarn(c.Request.Context(), fmt.Sprintf("USDT 链上验证失败 trade_no=%s tx=%s error=%q", req.TradeNo, txHash, err.Error()))
+		logger.LogWarn(c.Request.Context(), fmt.Sprintf("USDT On-chain verification failed trade_no=%s tx=%s error=%q", req.TradeNo, txHash, err.Error()))
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": err.Error()})
 		return
 	}
@@ -402,7 +402,7 @@ func VerifyUsdtTransaction(c *gin.Context) {
 	if topUp.Confirmations != confirmations {
 		topUp.Confirmations = confirmations
 		if err := topUp.Update(); err != nil {
-			logger.LogError(c.Request.Context(), fmt.Sprintf("USDT 更新确认数失败 trade_no=%s error=%q", req.TradeNo, err.Error()))
+			logger.LogError(c.Request.Context(), fmt.Sprintf("USDT Failed to update confirmation count trade_no=%s error=%q", req.TradeNo, err.Error()))
 		}
 	}
 
@@ -425,19 +425,19 @@ func VerifyUsdtTransaction(c *gin.Context) {
 		return
 	}
 	if actualAmount.GreaterThan(maxAccepted) {
-		logger.LogInfo(c.Request.Context(), fmt.Sprintf("USDT 到账金额超过预期 trade_no=%s expected=%.6f actual=%.6f", req.TradeNo, topUp.Money, amount))
+		logger.LogInfo(c.Request.Context(), fmt.Sprintf("USDT Received amount exceeds expected trade_no=%s expected=%.6f actual=%.6f", req.TradeNo, topUp.Money, amount))
 	}
 
 	LockOrder(req.TradeNo)
 	defer UnlockOrder(req.TradeNo)
 
 	if err := model.RechargeUsdt(req.TradeNo, txHash, c.ClientIP()); err != nil {
-		logger.LogError(c.Request.Context(), fmt.Sprintf("USDT 充值失败 trade_no=%s tx=%s error=%q", req.TradeNo, txHash, err.Error()))
+		logger.LogError(c.Request.Context(), fmt.Sprintf("USDT Top-up failed trade_no=%s tx=%s error=%q", req.TradeNo, txHash, err.Error()))
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": err.Error()})
 		return
 	}
 
-	logger.LogInfo(c.Request.Context(), fmt.Sprintf("USDT 充值成功 trade_no=%s tx=%s amount=%.6f confirmations=%d", req.TradeNo, txHash, amount, confirmations))
+	logger.LogInfo(c.Request.Context(), fmt.Sprintf("USDT Top-up successful trade_no=%s tx=%s amount=%.6f confirmations=%d", req.TradeNo, txHash, amount, confirmations))
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "success", "data": "Top-up successful"})
 }
 

@@ -31,7 +31,7 @@ func InitOptionMap() {
 	common.OptionMapRWMutex.Lock()
 	common.OptionMap = make(map[string]string)
 
-	// 添加原有的系统配置
+	// 添加原有的系统configuration
 	common.OptionMap["FileUploadPermission"] = strconv.Itoa(common.FileUploadPermission)
 	common.OptionMap["FileDownloadPermission"] = strconv.Itoa(common.FileDownloadPermission)
 	common.OptionMap["ImageUploadPermission"] = strconv.Itoa(common.ImageUploadPermission)
@@ -236,7 +236,7 @@ func InitOptionMap() {
 	common.OptionMap["AutomaticRetryStatusCodes"] = operation_setting.AutomaticRetryStatusCodesToString()
 	common.OptionMap["ExposeRatioEnabled"] = strconv.FormatBool(ratio_setting.IsExposeRatioEnabled())
 
-	// 自动添加所有注册的模型配置
+	// 自动添加所有注册的modelconfiguration
 	modelConfigs := config.GlobalConfig.ExportAllConfigs()
 	for k, v := range modelConfigs {
 		common.OptionMap[k] = v
@@ -318,12 +318,12 @@ func updateOptionMap(key string, value string) (err error) {
 	defer common.OptionMapRWMutex.Unlock()
 	common.OptionMap[key] = value
 
-	// 检查是否是模型配置 - 使用更规范的方式处理
+	// 检查是否是modelconfiguration - 使用更规范的方式processing
 	if handleConfigUpdate(key, value) {
-		return nil // 已由配置系统处理
+		return nil // 已由configuration系统processing
 	}
 
-	// 处理传统配置项...
+	// processing传统configuration项...
 	if strings.HasSuffix(key, "Permission") {
 		intValue, _ := strconv.Atoi(value)
 		switch key {
@@ -369,7 +369,7 @@ func updateOptionMap(key string, value string) (err error) {
 		case "LogConsumeEnabled":
 			common.LogConsumeEnabled = boolValue
 		case "DisplayInCurrencyEnabled":
-			// 兼容旧字段：同步到新配置 general_setting.quota_display_type（运行时生效）
+			// 兼容旧字段：同步到新configuration general_setting.quota_display_type（运行时生效）
 			// true -> USD, false -> TOKENS
 			newVal := "USD"
 			if !boolValue {
@@ -752,29 +752,29 @@ func updateOptionMap(key string, value string) (err error) {
 	return err
 }
 
-// handleConfigUpdate 处理分层配置更新，返回是否已处理
+// handleConfigUpdate processing分层configuration更新，返回是否已processing
 func handleConfigUpdate(key, value string) bool {
 	parts := strings.SplitN(key, ".", 2)
 	if len(parts) != 2 {
-		return false // 不是分层配置
+		return false // 不是分层configuration
 	}
 
 	configName := parts[0]
 	configKey := parts[1]
 
-	// 获取配置对象
+	// 获取configuration对象
 	cfg := config.GlobalConfig.Get(configName)
 	if cfg == nil {
-		return false // 未注册的配置
+		return false // 未注册的configuration
 	}
 
-	// 更新配置
+	// 更新configuration
 	configMap := map[string]string{
 		configKey: value,
 	}
 	config.UpdateConfigFromMap(cfg, configMap)
 
-	// 特定配置的后处理
+	// 特定configuration的后processing
 	if configName == "performance_setting" {
 		performance_setting.UpdateAndSync()
 	} else if configName == "tool_price_setting" {
@@ -786,5 +786,5 @@ func handleConfigUpdate(key, value string) bool {
 		system_setting.UpdateAndSyncTheme()
 	}
 
-	return true // 已处理
+	return true // 已processing
 }

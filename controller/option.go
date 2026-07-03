@@ -127,7 +127,7 @@ func UpdateOption(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"message": "无效的参数",
+			"message": "无效的parameter",
 		})
 		return
 	}
@@ -149,7 +149,7 @@ func UpdateOption(c *gin.Context) {
 		}
 	default:
 		if isPaymentComplianceOptionKey(option.Key) {
-			common.ApiErrorMsg(c, "合规确认字段不允许通过通用设置接口修改")
+			common.ApiErrorMsg(c, "合规确认字段不允许通过通用settings接口修改")
 			return
 		}
 	}
@@ -158,7 +158,7 @@ func UpdateOption(c *gin.Context) {
 		if option.Value == "true" && common.GitHubClientId == "" {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "无法启用 GitHub OAuth，请先填入 GitHub Client Id 以及 GitHub Client Secret！",
+				"message": "无法enabled GitHub OAuth，请先填入 GitHub Client Id 以及 GitHub Client Secret！",
 			})
 			return
 		}
@@ -166,7 +166,7 @@ func UpdateOption(c *gin.Context) {
 		if option.Value == "true" && system_setting.GetDiscordSettings().ClientId == "" {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "无法启用 Discord OAuth，请先填入 Discord Client Id 以及 Discord Client Secret！",
+				"message": "无法enabled Discord OAuth，请先填入 Discord Client Id 以及 Discord Client Secret！",
 			})
 			return
 		}
@@ -174,7 +174,7 @@ func UpdateOption(c *gin.Context) {
 		if option.Value == "true" && system_setting.GetOIDCSettings().ClientId == "" {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "无法启用 OIDC 登录，请先填入 OIDC Client Id 以及 OIDC Client Secret！",
+				"message": "无法enabled OIDC 登录，请先填入 OIDC Client Id 以及 OIDC Client Secret！",
 			})
 			return
 		}
@@ -182,7 +182,7 @@ func UpdateOption(c *gin.Context) {
 		if option.Value == "true" && common.LinuxDOClientId == "" {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "无法启用 LinuxDO OAuth，请先填入 LinuxDO Client Id 以及 LinuxDO Client Secret！",
+				"message": "无法enabled LinuxDO OAuth，请先填入 LinuxDO Client Id 以及 LinuxDO Client Secret！",
 			})
 			return
 		}
@@ -190,7 +190,7 @@ func UpdateOption(c *gin.Context) {
 		if option.Value == "true" && len(common.EmailDomainWhitelist) == 0 {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "无法启用邮箱域名限制，请先填入限制的邮箱域名！",
+				"message": "无法enabledemail域名限制，请先填入限制的email域名！",
 			})
 			return
 		}
@@ -198,7 +198,7 @@ func UpdateOption(c *gin.Context) {
 		if option.Value == "true" && common.WeChatServerAddress == "" {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "无法启用微信登录，请先填入微信登录相关配置信息！",
+				"message": "无法enabled微信登录，请先填入微信登录相关configurationinfo！",
 			})
 			return
 		}
@@ -206,7 +206,7 @@ func UpdateOption(c *gin.Context) {
 		if option.Value == "true" && common.TurnstileSiteKey == "" {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "无法启用 Turnstile 校验，请先填入 Turnstile 校验相关配置信息！",
+				"message": "无法enabled Turnstile 校验，请先填入 Turnstile 校验相关configurationinfo！",
 			})
 
 			return
@@ -215,7 +215,7 @@ func UpdateOption(c *gin.Context) {
 		if option.Value == "true" && common.TelegramBotToken == "" {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "无法启用 Telegram OAuth，请先填入 Telegram Bot Token！",
+				"message": "无法enabled Telegram OAuth，请先填入 Telegram Bot Token！",
 			})
 			return
 		}
@@ -241,7 +241,7 @@ func UpdateOption(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "图片倍率设置失败: " + err.Error(),
+				"message": "图片倍率settingsfailed: " + err.Error(),
 			})
 			return
 		}
@@ -250,7 +250,7 @@ func UpdateOption(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "音频倍率设置失败: " + err.Error(),
+				"message": "音频倍率settingsfailed: " + err.Error(),
 			})
 			return
 		}
@@ -259,7 +259,7 @@ func UpdateOption(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "音频补全倍率设置失败: " + err.Error(),
+				"message": "音频补全倍率settingsfailed: " + err.Error(),
 			})
 			return
 		}
@@ -268,7 +268,7 @@ func UpdateOption(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "缓存创建倍率设置失败: " + err.Error(),
+				"message": "缓存创建倍率settingsfailed: " + err.Error(),
 			})
 			return
 		}
@@ -341,7 +341,7 @@ func UpdateOption(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	// 出于安全考虑只记录被修改的配置项名称，不记录配置值（可能含密钥等敏感信息）。
+	// 出于安全考虑只记录被修改的configuration项名称，不记录configuration值（可能含secret key等敏感info）。
 	recordManageAudit(c, "option.update", map[string]interface{}{
 		"key": option.Key,
 	})

@@ -46,14 +46,14 @@ type Channel struct {
 	AutoBan           *int    `json:"auto_ban" gorm:"default:1"`
 	OtherInfo         string  `json:"other_info"`
 	Tag               *string `json:"tag" gorm:"index"`
-	Setting           *string `json:"setting" gorm:"type:text"` // 渠道额外设置
+	Setting           *string `json:"setting" gorm:"type:text"` // channel额外settings
 	ParamOverride     *string `json:"param_override" gorm:"type:text"`
 	HeaderOverride    *string `json:"header_override" gorm:"type:text"`
 	Remark            *string `json:"remark" gorm:"type:varchar(255)" validate:"max=255"`
 	// add after v0.8.5
 	ChannelInfo ChannelInfo `json:"channel_info" gorm:"type:json"`
 
-	OtherSettings string `json:"settings" gorm:"column:settings"` // 其他设置，存储azure版本等不需要检索的信息，详见dto.ChannelOtherSettings
+	OtherSettings string `json:"settings" gorm:"column:settings"` // 其他settings，存储azure版本等不需要检索的info，详见dto.ChannelOtherSettings
 
 	// cache info
 	Keys []string `json:"-" gorm:"-"`
@@ -62,7 +62,7 @@ type Channel struct {
 type ChannelInfo struct {
 	IsMultiKey             bool                  `json:"is_multi_key"`                        // 是否多Key模式
 	MultiKeySize           int                   `json:"multi_key_size"`                      // 多Key模式下的Key数量
-	MultiKeyStatusList     map[int]int           `json:"multi_key_status_list"`               // key状态列表，key index -> status
+	MultiKeyStatusList     map[int]int           `json:"multi_key_status_list"`               // keystatus列表，key index -> status
 	MultiKeyDisabledReason map[int]string        `json:"multi_key_disabled_reason,omitempty"` // key禁用原因列表，key index -> reason
 	MultiKeyDisabledTime   map[int]int64         `json:"multi_key_disabled_time,omitempty"`   // key禁用时间列表，key index -> time
 	MultiKeyPollingIndex   int                   `json:"multi_key_polling_index"`             // 多Key模式下轮询的key索引
@@ -717,7 +717,7 @@ func UpdateChannelStatus(channelId int, usingKey string, status int, reason stri
 			beforeStatus := channelCache.Status
 			pollingLock := GetChannelPollingLock(channelId)
 			pollingLock.Lock()
-			// 如果是多Key模式，更新缓存中的状态
+			// 如果是多Key模式，更新缓存中的status
 			handlerMultiKeyUpdate(channelCache, usingKey, status, reason)
 			pollingLock.Unlock()
 			if beforeStatus != channelCache.Status {
@@ -726,7 +726,7 @@ func UpdateChannelStatus(channelId int, usingKey string, status int, reason stri
 			//CacheUpdateChannel(channelCache)
 			//return true
 		} else {
-			// 如果缓存渠道存在，且状态已是目标状态，直接返回
+			// 如果缓存channel存在，且status已是目标status，直接返回
 			if channelCache.Status == status {
 				return false
 			}
@@ -954,7 +954,7 @@ func (channel *Channel) GetSetting() dto.ChannelSettings {
 		err := common.Unmarshal([]byte(*channel.Setting), &setting)
 		if err != nil {
 			common.SysLog(fmt.Sprintf("failed to unmarshal setting: channel_id=%d, error=%v", channel.Id, err))
-			channel.Setting = nil // 清空设置以避免后续错误
+			channel.Setting = nil // 清空settings以避免后续error
 			_ = channel.Save()    // 保存修改
 		}
 	}
@@ -976,7 +976,7 @@ func (channel *Channel) GetOtherSettings() dto.ChannelOtherSettings {
 		err := common.UnmarshalJsonStr(channel.OtherSettings, &setting)
 		if err != nil {
 			common.SysLog(fmt.Sprintf("failed to unmarshal setting: channel_id=%d, error=%v", channel.Id, err))
-			channel.OtherSettings = "{}" // 清空设置以避免后续错误
+			channel.OtherSettings = "{}" // 清空settings以避免后续error
 			_ = channel.Save()           // 保存修改
 		}
 	}

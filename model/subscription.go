@@ -586,7 +586,7 @@ func CompleteSubscriptionOrder(tradeNo string, providerPayload string, expectedP
 		_ = UpdateUserGroupCache(logUserId, upgradeGroup)
 	}
 	if logUserId > 0 {
-		msg := fmt.Sprintf("订阅购买成功，套餐: %s，支付金额: %.2f，支付方式: %s", logPlanTitle, logMoney, logPaymentMethod)
+		msg := fmt.Sprintf("subscription购买successful，套餐: %s，payment amount: %.2f，payment方式: %s", logPlanTitle, logMoney, logPaymentMethod)
 		RecordLog(logUserId, LogTypeTopup, msg)
 	}
 	return nil
@@ -671,7 +671,7 @@ func AdminBindSubscription(userId int, planId int, sourceNote string) (string, e
 	}
 	if strings.TrimSpace(plan.UpgradeGroup) != "" {
 		_ = UpdateUserGroupCache(userId, plan.UpgradeGroup)
-		return fmt.Sprintf("用户分组将升级到 %s", plan.UpgradeGroup), nil
+		return fmt.Sprintf("user分组将升级到 %s", plan.UpgradeGroup), nil
 	}
 	return "", nil
 }
@@ -681,7 +681,7 @@ func calcSubscriptionBalanceQuota(priceAmount float64) (int, error) {
 		return 0, nil
 	}
 	if common.QuotaPerUnit <= 0 {
-		return 0, errors.New("额度单位配置错误")
+		return 0, errors.New("quota单位configurationerror")
 	}
 	quota := decimal.NewFromFloat(priceAmount).
 		Mul(decimal.NewFromFloat(common.QuotaPerUnit)).
@@ -712,7 +712,7 @@ func PurchaseSubscriptionWithBalance(userId int, planId int) error {
 			return errors.New("套餐价格不能为负数")
 		}
 		if plan.AllowBalancePay != nil && !*plan.AllowBalancePay {
-			return errors.New("该套餐不允许使用余额兑换")
+			return errors.New("该套餐不允许使用balance兑换")
 		}
 
 		requiredQuota, err := calcSubscriptionBalanceQuota(plan.PriceAmount)
@@ -725,7 +725,7 @@ func PurchaseSubscriptionWithBalance(userId int, planId int) error {
 			return err
 		}
 		if requiredQuota > 0 && user.Quota < requiredQuota {
-			return errors.New("余额不足")
+			return errors.New("balance不足")
 		}
 		if requiredQuota > 0 {
 			if err := tx.Model(&User{}).Where("id = ?", userId).
@@ -774,7 +774,7 @@ func PurchaseSubscriptionWithBalance(userId int, planId int) error {
 	if upgradeGroup != "" {
 		_ = UpdateUserGroupCache(userId, upgradeGroup)
 	}
-	msg := fmt.Sprintf("使用余额购买订阅成功，套餐: %s，支付金额: %.2f，扣除额度: %d", logPlanTitle, logMoney, chargedQuota)
+	msg := fmt.Sprintf("使用balance购买subscriptionsuccessful，套餐: %s，payment amount: %.2f，扣除quota: %d", logPlanTitle, logMoney, chargedQuota)
 	RecordLog(userId, LogTypeTopup, msg)
 	return nil
 }
@@ -880,7 +880,7 @@ func AdminInvalidateUserSubscription(userSubscriptionId int) (string, error) {
 		_ = UpdateUserGroupCache(userId, cacheGroup)
 	}
 	if downgradeGroup != "" {
-		return fmt.Sprintf("用户分组将回退到 %s", downgradeGroup), nil
+		return fmt.Sprintf("user分组将回退到 %s", downgradeGroup), nil
 	}
 	return "", nil
 }
@@ -921,7 +921,7 @@ func AdminDeleteUserSubscription(userSubscriptionId int) (string, error) {
 		_ = UpdateUserGroupCache(userId, cacheGroup)
 	}
 	if downgradeGroup != "" {
-		return fmt.Sprintf("用户分组将回退到 %s", downgradeGroup), nil
+		return fmt.Sprintf("user分组将回退到 %s", downgradeGroup), nil
 	}
 	return "", nil
 }

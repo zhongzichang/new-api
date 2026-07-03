@@ -29,7 +29,7 @@ func (Checkin) TableName() string {
 	return "checkins"
 }
 
-// GetUserCheckinRecords 获取用户在指定日期范围内的签到记录
+// GetUserCheckinRecords 获取user在指定日期范围内的签到记录
 func GetUserCheckinRecords(userId int, startDate, endDate string) ([]Checkin, error) {
 	var records []Checkin
 	err := DB.Where("user_id = ? AND checkin_date >= ? AND checkin_date <= ?",
@@ -39,7 +39,7 @@ func GetUserCheckinRecords(userId int, startDate, endDate string) ([]Checkin, er
 	return records, err
 }
 
-// HasCheckedInToday 检查用户今天是否已签到
+// HasCheckedInToday 检查user今天是否已签到
 func HasCheckedInToday(userId int) (bool, error) {
 	today := time.Now().Format("2006-01-02")
 	var count int64
@@ -49,7 +49,7 @@ func HasCheckedInToday(userId int) (bool, error) {
 	return count > 0, err
 }
 
-// UserCheckin 执行用户签到
+// UserCheckin 执行user签到
 // MySQL 和 PostgreSQL 使用事务保证原子性
 // SQLite 不支持嵌套事务，使用顺序操作 + 手动回滚
 func UserCheckin(userId int) (*Checkin, error) {
@@ -67,7 +67,7 @@ func UserCheckin(userId int) (*Checkin, error) {
 		return nil, errors.New("今日已签到")
 	}
 
-	// 计算随机额度奖励
+	// 计算随机quota奖励
 	quotaAwarded := setting.MinQuota
 	if setting.MaxQuota > setting.MinQuota {
 		quotaAwarded = setting.MinQuota + rand.Intn(setting.MaxQuota-setting.MinQuota+1)
@@ -97,13 +97,13 @@ func userCheckinWithTransaction(checkin *Checkin, userId int, quotaAwarded int) 
 		// 步骤1: 创建签到记录
 		// 数据库有唯一约束 (user_id, checkin_date)，可以防止并发重复签到
 		if err := tx.Create(checkin).Error; err != nil {
-			return errors.New("签到失败，请稍后重试")
+			return errors.New("签到failed，请稍后重试")
 		}
 
-		// 步骤2: 在事务中增加用户额度
+		// 步骤2: 在事务中增加userquota
 		if err := tx.Model(&User{}).Where("id = ?", userId).
 			Update("quota", gorm.Expr("quota + ?", quotaAwarded)).Error; err != nil {
-			return errors.New("签到失败：更新额度出错")
+			return errors.New("签到failed：更新quota出错")
 		}
 
 		return nil
@@ -113,7 +113,7 @@ func userCheckinWithTransaction(checkin *Checkin, userId int, quotaAwarded int) 
 		return nil, err
 	}
 
-	// 事务成功后，异步更新缓存
+	// 事务successful后，异步更新缓存
 	go func() {
 		_ = cacheIncrUserQuota(userId, int64(quotaAwarded))
 	}()
@@ -126,21 +126,21 @@ func userCheckinWithoutTransaction(checkin *Checkin, userId int, quotaAwarded in
 	// 步骤1: 创建签到记录
 	// 数据库有唯一约束 (user_id, checkin_date)，可以防止并发重复签到
 	if err := DB.Create(checkin).Error; err != nil {
-		return nil, errors.New("签到失败，请稍后重试")
+		return nil, errors.New("签到failed，请稍后重试")
 	}
 
-	// 步骤2: 增加用户额度
+	// 步骤2: 增加userquota
 	// 使用 db=true 强制直接写入数据库，不使用批量更新
 	if err := IncreaseUserQuota(userId, quotaAwarded, true); err != nil {
-		// 如果增加额度失败，需要回滚签到记录
+		// 如果增加quotafailed，需要回滚签到记录
 		DB.Delete(checkin)
-		return nil, errors.New("签到失败：更新额度出错")
+		return nil, errors.New("签到failed：更新quota出错")
 	}
 
 	return checkin, nil
 }
 
-// GetUserCheckinStats 获取用户签到统计信息
+// GetUserCheckinStats 获取user签到统计info
 func GetUserCheckinStats(userId int, month string) (map[string]interface{}, error) {
 	// 获取指定月份的所有签到记录
 	startDate := month + "-01"
@@ -163,14 +163,14 @@ func GetUserCheckinStats(userId int, month string) (map[string]interface{}, erro
 	// 检查今天是否已签到
 	hasCheckedToday, _ := HasCheckedInToday(userId)
 
-	// 获取用户所有时间的签到统计
+	// 获取user所有时间的签到统计
 	var totalCheckins int64
 	var totalQuota int64
 	DB.Model(&Checkin{}).Where("user_id = ?", userId).Count(&totalCheckins)
 	DB.Model(&Checkin{}).Where("user_id = ?", userId).Select("COALESCE(SUM(quota_awarded), 0)").Scan(&totalQuota)
 
 	return map[string]interface{}{
-		"total_quota":      totalQuota,      // 所有时间累计获得的额度
+		"total_quota":      totalQuota,      // 所有时间累计获得的quota
 		"total_checkins":   totalCheckins,   // 所有时间累计签到次数
 		"checkin_count":    len(records),    // 本月签到次数
 		"checked_in_today": hasCheckedToday, // 今天是否已签到

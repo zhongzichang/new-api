@@ -65,9 +65,9 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// 检查是否启用2FA
+	// 检查是否enabled2FA
 	if model.IsTwoFAEnabled(user.Id) {
-		// 设置pending session，等待2FA验证
+		// settingspending session，等待2FAverification
 		session := sessions.Default(c)
 		session.Set("pending_username", user.Username)
 		session.Set("pending_user_id", user.Id)
@@ -90,7 +90,7 @@ func Login(c *gin.Context) {
 	setupLogin(&user, c)
 }
 
-// loginMethodFromContext 根据请求路径推导登录方式，用于登录审计日志。
+// loginMethodFromContext 根据request路径推导登录方式，用于登录审计日志。
 func loginMethodFromContext(c *gin.Context) string {
 	switch c.FullPath() {
 	case "/api/user/login":
@@ -113,7 +113,7 @@ func loginMethodFromContext(c *gin.Context) string {
 	}
 }
 
-// recordLoginAudit 记录登录成功审计日志（对所有用户启用，仅记录成功，不记录失败）。
+// recordLoginAudit 记录登录successful审计日志（对所有userenabled，仅记录successful，不记录failed）。
 func recordLoginAudit(user *model.User, c *gin.Context) {
 	method := loginMethodFromContext(c)
 	ip := c.ClientIP()
@@ -219,7 +219,7 @@ func Register(c *gin.Context) {
 		Password:    user.Password,
 		DisplayName: user.Username,
 		InviterId:   inviterId,
-		Role:        common.RoleCommonUser, // 明确设置角色为普通用户
+		Role:        common.RoleCommonUser, // 明确settings角色为普通user
 	}
 	if common.EmailVerificationEnabled {
 		cleanUser.Email = user.Email
@@ -229,13 +229,13 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// 获取插入后的用户ID
+	// 获取插入后的user ID
 	var insertedUser model.User
 	if err := model.DB.Where("username = ?", cleanUser.Username).First(&insertedUser).Error; err != nil {
 		common.ApiErrorI18n(c, i18n.MsgUserRegisterFailed)
 		return
 	}
-	// 生成默认令牌
+	// 生成默认token
 	if constant.GenerateDefaultToken {
 		key, err := common.GenerateKey()
 		if err != nil {
@@ -243,15 +243,15 @@ func Register(c *gin.Context) {
 			common.SysLog("failed to generate token key: " + err.Error())
 			return
 		}
-		// 生成默认令牌
+		// 生成默认token
 		token := model.Token{
-			UserId:             insertedUser.Id, // 使用插入后的用户ID
+			UserId:             insertedUser.Id, // 使用插入后的user ID
 			Name:               cleanUser.Username + "'s initial token",
 			Key:                key,
 			CreatedTime:        common.GetTimestamp(),
 			AccessedTime:       common.GetTimestamp(),
-			ExpiredTime:        -1,     // 永不过期
-			RemainQuota:        500000, // 示例额度
+			ExpiredTime:        -1,     // 永不expired
+			RemainQuota:        500000, // 示例quota
 			UnlimitedQuota:     true,
 			ModelLimitsEnabled: false,
 		}
@@ -441,13 +441,13 @@ func GetSelf(c *gin.Context) {
 	// Hide admin remarks: set to empty to trigger omitempty tag, ensuring the remark field is not included in JSON returned to regular users
 	user.Remark = ""
 
-	// 计算用户权限信息
+	// 计算user权限info
 	permissions := calculateUserPermissions(userRole)
 
-	// 获取用户设置并提取sidebar_modules
+	// 获取usersettings并提取sidebar_modules
 	userSetting := user.GetSetting()
 
-	// 构建响应数据，包含用户信息和权限
+	// 构建response数据，包含userinfo和权限
 	responseData := map[string]interface{}{
 		"id":                user.Id,
 		"username":          user.Username,
@@ -484,46 +484,46 @@ func GetSelf(c *gin.Context) {
 	return
 }
 
-// 计算用户权限的辅助函数
+// 计算user权限的辅助函数
 func calculateUserPermissions(userRole int) map[string]interface{} {
 	permissions := map[string]interface{}{}
 
-	// 根据用户角色计算权限
+	// 根据user角色计算权限
 	if userRole == common.RoleRootUser {
-		// 超级管理员不需要边栏设置功能
+		// 超级管理员不需要边栏settings功能
 		permissions["sidebar_settings"] = false
 		permissions["sidebar_modules"] = map[string]interface{}{}
 	} else if userRole == common.RoleAdminUser {
-		// 管理员可以设置边栏，但不包含系统设置功能
+		// 管理员可以settings边栏，但不包含系统settings功能
 		permissions["sidebar_settings"] = true
 		permissions["sidebar_modules"] = map[string]interface{}{
 			"admin": map[string]interface{}{
-				"setting": false, // 管理员不能访问系统设置
+				"setting": false, // 管理员不能访问系统settings
 			},
 		}
 	} else {
-		// 普通用户只能设置个人功能，不包含管理员区域
+		// 普通user只能settings个人功能，不包含管理员区域
 		permissions["sidebar_settings"] = true
 		permissions["sidebar_modules"] = map[string]interface{}{
-			"admin": false, // 普通用户不能访问管理员区域
+			"admin": false, // 普通user不能访问管理员区域
 		}
 	}
 
 	return permissions
 }
 
-// 根据用户角色生成默认的边栏配置
+// 根据user角色生成默认的边栏configuration
 func generateDefaultSidebarConfig(userRole int) string {
 	defaultConfig := map[string]interface{}{}
 
-	// 聊天区域 - 所有用户都可以访问
+	// 聊天区域 - 所有user都可以访问
 	defaultConfig["chat"] = map[string]interface{}{
 		"enabled":    true,
 		"playground": true,
 		"chat":       true,
 	}
 
-	// 控制台区域 - 所有用户都可以访问
+	// 控制台区域 - 所有user都可以访问
 	defaultConfig["console"] = map[string]interface{}{
 		"enabled":    true,
 		"detail":     true,
@@ -533,7 +533,7 @@ func generateDefaultSidebarConfig(userRole int) string {
 		"task":       true,
 	}
 
-	// 个人中心区域 - 所有用户都可以访问
+	// 个人中心区域 - 所有user都可以访问
 	defaultConfig["personal"] = map[string]interface{}{
 		"enabled":  true,
 		"topup":    true,
@@ -542,14 +542,14 @@ func generateDefaultSidebarConfig(userRole int) string {
 
 	// 管理员区域 - 根据角色决定
 	if userRole == common.RoleAdminUser {
-		// 管理员可以访问管理员区域，但不能访问系统设置
+		// 管理员可以访问管理员区域，但不能访问系统settings
 		defaultConfig["admin"] = map[string]interface{}{
 			"enabled":    true,
 			"channel":    true,
 			"models":     true,
 			"redemption": true,
 			"user":       true,
-			"setting":    false, // 管理员不能访问系统设置
+			"setting":    false, // 管理员不能访问系统settings
 		}
 	} else if userRole == common.RoleRootUser {
 		// 超级管理员可以访问所有功能
@@ -562,12 +562,12 @@ func generateDefaultSidebarConfig(userRole int) string {
 			"setting":    true,
 		}
 	}
-	// 普通用户不包含admin区域
+	// 普通user不包含admin区域
 
 	// 转换为JSON字符串
 	configBytes, err := json.Marshal(defaultConfig)
 	if err != nil {
-		common.SysLog("生成默认边栏配置失败: " + err.Error())
+		common.SysLog("生成默认边栏configurationfailed: " + err.Error())
 		return ""
 	}
 
@@ -697,7 +697,7 @@ func UpdateSelf(c *gin.Context) {
 		return
 	}
 
-	// 检查是否是用户设置更新请求 (sidebar_modules 或 language)
+	// 检查是否是usersettings更新request (sidebar_modules 或 language)
 	if sidebarModules, sidebarExists := requestData["sidebar_modules"]; sidebarExists {
 		userId := c.GetInt("id")
 		user, err := model.GetUserById(userId, false)
@@ -706,7 +706,7 @@ func UpdateSelf(c *gin.Context) {
 			return
 		}
 
-		// 获取当前用户设置
+		// 获取当前usersettings
 		currentSetting := user.GetSetting()
 
 		// 更新sidebar_modules字段
@@ -714,7 +714,7 @@ func UpdateSelf(c *gin.Context) {
 			currentSetting.SidebarModules = sidebarModulesStr
 		}
 
-		// 保存更新后的设置
+		// 保存更新后的settings
 		user.SetSetting(currentSetting)
 		if err := user.Update(false); err != nil {
 			common.ApiErrorI18n(c, i18n.MsgUpdateFailed)
@@ -725,7 +725,7 @@ func UpdateSelf(c *gin.Context) {
 		return
 	}
 
-	// 检查是否是语言偏好更新请求
+	// 检查是否是语言偏好更新request
 	if language, langExists := requestData["language"]; langExists {
 		userId := c.GetInt("id")
 		user, err := model.GetUserById(userId, false)
@@ -734,7 +734,7 @@ func UpdateSelf(c *gin.Context) {
 			return
 		}
 
-		// 获取当前用户设置
+		// 获取当前usersettings
 		currentSetting := user.GetSetting()
 
 		// 更新language字段
@@ -742,7 +742,7 @@ func UpdateSelf(c *gin.Context) {
 			currentSetting.Language = langStr
 		}
 
-		// 保存更新后的设置
+		// 保存更新后的settings
 		user.SetSetting(currentSetting)
 		if err := user.Update(false); err != nil {
 			common.ApiErrorI18n(c, i18n.MsgUpdateFailed)
@@ -753,7 +753,7 @@ func UpdateSelf(c *gin.Context) {
 		return
 	}
 
-	// 原有的用户信息更新逻辑
+	// 原有的userinfo更新逻辑
 	var user model.User
 	requestDataBytes, err := json.Marshal(requestData)
 	if err != nil {
@@ -808,8 +808,8 @@ func checkUpdatePassword(originalPassword string, newPassword string, userId int
 		return
 	}
 
-	// 密码不为空,需要验证原密码
-	// 支持第一次账号绑定时原密码为空的情况
+	// password不为空,需要verification原password
+	// 支持第一次账号绑定时原password为空的情况
 	if !common.ValidatePasswordAndHash(originalPassword, currentUser.Password) && currentUser.Password != "" {
 		err = fmt.Errorf("Incorrect current password")
 		return
@@ -900,7 +900,7 @@ func CreateUser(c *gin.Context) {
 		Password:    user.Password,
 		DisplayName: user.DisplayName,
 		Email:       user.Email,
-		Role:        user.Role, // 保持管理员设置的角色
+		Role:        user.Role, // 保持管理员settings的角色
 	}
 	if err := cleanUser.Insert(0); err != nil {
 		common.ApiError(c, err)
@@ -969,8 +969,8 @@ func ManageUser(c *gin.Context) {
 			})
 			return
 		}
-		// 删除用户后，强制清理 Redis 中所有该用户令牌的缓存，
-		// 避免已缓存的令牌在 TTL 过期前仍能通过 TokenAuth 校验。
+		// 删除user后，强制清理 Redis 中所有该usertoken的缓存，
+		// 避免已缓存的token在 TTL expired前仍能通过 TokenAuth 校验。
 		if err := model.InvalidateUserTokensCache(user.Id); err != nil {
 			common.SysLog(fmt.Sprintf("failed to invalidate tokens cache for user %d: %s", user.Id, err.Error()))
 		}
@@ -1045,10 +1045,10 @@ func ManageUser(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	// 禁用 / 角色调整后，强制失效用户缓存与其全部令牌缓存，
-	// 避免在 Redis TTL 过期前仍使用旧状态（尤其是禁用后仍可发起请求的问题）。
+	// disabled / 角色调整后，强制失效user缓存与其全部token缓存，
+	// 避免在 Redis TTL expired前仍使用旧status（尤其是disabled后仍可发起request的问题）。
 	// InvalidateUserCache 会让下一次 GetUserCache 从数据库重新加载，
-	// InvalidateUserTokensCache 则确保令牌侧的缓存也同步刷新。
+	// InvalidateUserTokensCache 则确保token侧的缓存也同步刷新。
 	if req.Action == "disable" || req.Action == "promote" || req.Action == "demote" {
 		if err := model.InvalidateUserCache(user.Id); err != nil {
 			common.SysLog(fmt.Sprintf("failed to invalidate user cache for user %d: %s", user.Id, err.Error()))
@@ -1217,47 +1217,47 @@ func UpdateUserSetting(c *gin.Context) {
 		return
 	}
 
-	// 验证预警类型
+	// verification预警类型
 	if req.QuotaWarningType != dto.NotifyTypeEmail && req.QuotaWarningType != dto.NotifyTypeWebhook && req.QuotaWarningType != dto.NotifyTypeBark && req.QuotaWarningType != dto.NotifyTypeGotify {
 		common.ApiErrorI18n(c, i18n.MsgSettingInvalidType)
 		return
 	}
 
-	// 验证预警阈值
+	// verification预警阈值
 	if req.QuotaWarningThreshold <= 0 {
 		common.ApiErrorI18n(c, i18n.MsgQuotaThresholdGtZero)
 		return
 	}
 
-	// 如果是webhook类型,验证webhook地址
+	// 如果是webhook类型,verificationwebhook地址
 	if req.QuotaWarningType == dto.NotifyTypeWebhook {
 		if req.WebhookUrl == "" {
 			common.ApiErrorI18n(c, i18n.MsgSettingWebhookEmpty)
 			return
 		}
-		// 验证URL格式
+		// verificationURL格式
 		if _, err := url.ParseRequestURI(req.WebhookUrl); err != nil {
 			common.ApiErrorI18n(c, i18n.MsgSettingWebhookInvalid)
 			return
 		}
 	}
 
-	// 如果是邮件类型，验证邮箱地址
+	// 如果是邮件类型，verificationemail地址
 	if req.QuotaWarningType == dto.NotifyTypeEmail && req.NotificationEmail != "" {
-		// 验证邮箱格式
+		// verificationemail格式
 		if !strings.Contains(req.NotificationEmail, "@") {
 			common.ApiErrorI18n(c, i18n.MsgSettingEmailInvalid)
 			return
 		}
 	}
 
-	// 如果是Bark类型，验证Bark URL
+	// 如果是Bark类型，verificationBark URL
 	if req.QuotaWarningType == dto.NotifyTypeBark {
 		if req.BarkUrl == "" {
 			common.ApiErrorI18n(c, i18n.MsgSettingBarkUrlEmpty)
 			return
 		}
-		// 验证URL格式
+		// verificationURL格式
 		if _, err := url.ParseRequestURI(req.BarkUrl); err != nil {
 			common.ApiErrorI18n(c, i18n.MsgSettingBarkUrlInvalid)
 			return
@@ -1269,7 +1269,7 @@ func UpdateUserSetting(c *gin.Context) {
 		}
 	}
 
-	// 如果是Gotify类型，验证Gotify URL和Token
+	// 如果是Gotify类型，verificationGotify URL和Token
 	if req.QuotaWarningType == dto.NotifyTypeGotify {
 		if req.GotifyUrl == "" {
 			common.ApiErrorI18n(c, i18n.MsgSettingGotifyUrlEmpty)
@@ -1279,7 +1279,7 @@ func UpdateUserSetting(c *gin.Context) {
 			common.ApiErrorI18n(c, i18n.MsgSettingGotifyTokenEmpty)
 			return
 		}
-		// 验证URL格式
+		// verificationURL格式
 		if _, err := url.ParseRequestURI(req.GotifyUrl); err != nil {
 			common.ApiErrorI18n(c, i18n.MsgSettingGotifyUrlInvalid)
 			return
@@ -1303,7 +1303,7 @@ func UpdateUserSetting(c *gin.Context) {
 		upstreamModelUpdateNotifyEnabled = *req.UpstreamModelUpdateNotifyEnabled
 	}
 
-	// 构建设置
+	// 构建settings
 	settings := dto.UserSetting{
 		NotifyType:                       req.QuotaWarningType,
 		QuotaWarningThreshold:            req.QuotaWarningThreshold,
@@ -1312,7 +1312,7 @@ func UpdateUserSetting(c *gin.Context) {
 		RecordIpLog:                      req.RecordIpLog,
 	}
 
-	// 如果是webhook类型,添加webhook相关设置
+	// 如果是webhook类型,添加webhook相关settings
 	if req.QuotaWarningType == dto.NotifyTypeWebhook {
 		settings.WebhookUrl = req.WebhookUrl
 		if req.WebhookSecret != "" {
@@ -1320,17 +1320,17 @@ func UpdateUserSetting(c *gin.Context) {
 		}
 	}
 
-	// 如果提供了通知邮箱，添加到设置中
+	// 如果提供了通知email，添加到settings中
 	if req.QuotaWarningType == dto.NotifyTypeEmail && req.NotificationEmail != "" {
 		settings.NotificationEmail = req.NotificationEmail
 	}
 
-	// 如果是Bark类型，添加Bark URL到设置中
+	// 如果是Bark类型，添加Bark URL到settings中
 	if req.QuotaWarningType == dto.NotifyTypeBark {
 		settings.BarkUrl = req.BarkUrl
 	}
 
-	// 如果是Gotify类型，添加Gotify配置到设置中
+	// 如果是Gotify类型，添加Gotifyconfiguration到settings中
 	if req.QuotaWarningType == dto.NotifyTypeGotify {
 		settings.GotifyUrl = req.GotifyUrl
 		settings.GotifyToken = req.GotifyToken
@@ -1342,7 +1342,7 @@ func UpdateUserSetting(c *gin.Context) {
 		}
 	}
 
-	// 更新用户设置
+	// 更新usersettings
 	user.SetSetting(settings)
 	if err := user.Update(false); err != nil {
 		common.ApiErrorI18n(c, i18n.MsgUpdateFailed)

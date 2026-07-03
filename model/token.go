@@ -85,7 +85,7 @@ func GetAllUserTokens(userId int, startIdx int, num int) ([]*Token, error) {
 	return tokens, err
 }
 
-// sanitizeLikePattern 校验并清洗用户输入的 LIKE 搜索模式。
+// sanitizeLikePattern 校验并清洗user输入的 LIKE 搜索模式。
 // 规则：
 //  1. 转义 ! 和 _（使用 ! 作为 ESCAPE 字符，兼容 MySQL/PostgreSQL/SQLite）
 //  2. 连续的 % 合并为单个 %
@@ -137,23 +137,23 @@ func SearchUserTokens(userId int, keyword string, token string, offset int, limi
 		token = strings.TrimPrefix(token, "sk-")
 	}
 
-	// 超量用户（令牌数超过上限）只允许精确搜索，禁止模糊搜索
+	// 超量user（token数超过上限）只允许精确搜索，禁止模糊搜索
 	maxTokens := operation_setting.GetMaxUserTokens()
 	hasFuzzy := strings.Contains(keyword, "%") || strings.Contains(token, "%")
 	if hasFuzzy {
 		count, err := CountUserTokens(userId)
 		if err != nil {
 			common.SysLog("failed to count user tokens: " + err.Error())
-			return nil, 0, errors.New("获取令牌数量失败")
+			return nil, 0, errors.New("获取token数量failed")
 		}
 		if int(count) > maxTokens {
-			return nil, 0, errors.New("令牌数量超过上限，仅允许精确搜索，请勿使用 % 通配符")
+			return nil, 0, errors.New("token数量超过上限，仅允许精确搜索，请勿使用 % 通配符")
 		}
 	}
 
 	baseQuery := DB.Model(&Token{}).Where("user_id = ?", userId)
 
-	// 非空才加 LIKE 条件，空则跳过（不过滤该字段）
+	// 非空才加 LIKE 条件，空则skipping（不过滤该字段）
 	if keyword != "" {
 		keywordPattern, err := sanitizeLikePattern(keyword)
 		if err != nil {
@@ -173,14 +173,14 @@ func SearchUserTokens(userId int, keyword string, token string, offset int, limi
 	err = baseQuery.Limit(maxTokens).Count(&total).Error
 	if err != nil {
 		common.SysError("failed to count search tokens: " + err.Error())
-		return nil, 0, errors.New("搜索令牌失败")
+		return nil, 0, errors.New("搜索tokenfailed")
 	}
 
 	// 再分页查数据
 	err = baseQuery.Order("id desc").Offset(offset).Limit(limit).Find(&tokens).Error
 	if err != nil {
 		common.SysError("failed to search tokens: " + err.Error())
-		return nil, 0, errors.New("搜索令牌失败")
+		return nil, 0, errors.New("搜索tokenfailed")
 	}
 	return tokens, total, nil
 }
@@ -227,7 +227,7 @@ func ValidateUserToken(key string) (token *Token, err error) {
 
 func GetTokenByIds(id int, userId int) (*Token, error) {
 	if id == 0 || userId == 0 {
-		return nil, errors.New("id 或 userId 为空！")
+		return nil, errors.New("id 或 userId 为空!")
 	}
 	token := Token{Id: id, UserId: userId}
 	var err error = nil
@@ -237,7 +237,7 @@ func GetTokenByIds(id int, userId int) (*Token, error) {
 
 func GetTokenById(id int) (*Token, error) {
 	if id == 0 {
-		return nil, errors.New("id 为空！")
+		return nil, errors.New("id 为空!")
 	}
 	token := Token{Id: id}
 	var err error = nil
@@ -362,7 +362,7 @@ func DisableModelLimits(tokenId int) error {
 func DeleteTokenById(id int, userId int) (err error) {
 	// Why we need userId here? In case user want to delete other's token.
 	if id == 0 || userId == 0 {
-		return errors.New("id 或 userId 为空！")
+		return errors.New("id 或 userId 为空!")
 	}
 	token := Token{Id: id, UserId: userId}
 	err = DB.Where(token).First(&token).Error
@@ -374,7 +374,7 @@ func DeleteTokenById(id int, userId int) (err error) {
 
 func IncreaseTokenQuota(tokenId int, key string, quota int) (err error) {
 	if quota < 0 {
-		return errors.New("quota 不能为负数！")
+		return errors.New("quota 不能为负数!")
 	}
 	if common.RedisEnabled {
 		gopool.Go(func() {
@@ -404,7 +404,7 @@ func increaseTokenQuota(id int, quota int) (err error) {
 
 func DecreaseTokenQuota(id int, key string, quota int) (err error) {
 	if quota < 0 {
-		return errors.New("quota 不能为负数！")
+		return errors.New("quota 不能为负数!")
 	}
 	if common.RedisEnabled {
 		gopool.Go(func() {
@@ -439,10 +439,10 @@ func CountUserTokens(userId int) (int64, error) {
 	return total, err
 }
 
-// BatchDeleteTokens 删除指定用户的一组令牌，返回成功删除数量
+// BatchDeleteTokens 删除指定user的一组token，返回successful删除数量
 func BatchDeleteTokens(ids []int, userId int) (int, error) {
 	if len(ids) == 0 {
-		return 0, errors.New("ids 不能为空！")
+		return 0, errors.New("ids 不能为空!")
 	}
 
 	tx := DB.Begin()
@@ -481,9 +481,9 @@ func GetTokenKeysByIds(ids []int, userId int) ([]Token, error) {
 	return tokens, err
 }
 
-// InvalidateUserTokensCache 清理指定用户所有令牌在 Redis 中的缓存，
-// 配合 InvalidateUserCache 使用，可在用户被禁用/删除时立即阻断其令牌的请求。
-// 下一次请求将从数据库重新加载令牌及用户状态，从而立即识别出被禁用的用户。
+// InvalidateUserTokensCache 清理指定user所有token在 Redis 中的缓存，
+// 配合 InvalidateUserCache 使用，可在user被禁用/删除时立即阻断其token的request。
+// 下一次request将从数据库重新加载token及userstatus，从而立即识别出被禁用的user。
 func InvalidateUserTokensCache(userId int) error {
 	if !common.RedisEnabled {
 		return nil

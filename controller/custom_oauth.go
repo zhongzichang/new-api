@@ -142,7 +142,7 @@ type FetchCustomOAuthDiscoveryRequest struct {
 func FetchCustomOAuthDiscovery(c *gin.Context) {
 	var req FetchCustomOAuthDiscoveryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ApiErrorMsg(c, "无效的请求参数: "+err.Error())
+		common.ApiErrorMsg(c, "无效的requestparameter: "+err.Error())
 		return
 	}
 
@@ -171,7 +171,7 @@ func FetchCustomOAuthDiscovery(c *gin.Context) {
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
 	if err != nil {
-		common.ApiErrorMsg(c, "创建 Discovery 请求失败: "+err.Error())
+		common.ApiErrorMsg(c, "创建 Discovery requestfailed: "+err.Error())
 		return
 	}
 	httpReq.Header.Set("Accept", "application/json")
@@ -179,7 +179,7 @@ func FetchCustomOAuthDiscovery(c *gin.Context) {
 	client := &http.Client{Timeout: 20 * time.Second}
 	resp, err := client.Do(httpReq)
 	if err != nil {
-		common.ApiErrorMsg(c, "获取 Discovery 配置失败: "+err.Error())
+		common.ApiErrorMsg(c, "获取 Discovery configurationfailed: "+err.Error())
 		return
 	}
 	defer resp.Body.Close()
@@ -190,13 +190,13 @@ func FetchCustomOAuthDiscovery(c *gin.Context) {
 		if message == "" {
 			message = resp.Status
 		}
-		common.ApiErrorMsg(c, "获取 Discovery 配置失败: "+message)
+		common.ApiErrorMsg(c, "获取 Discovery configurationfailed: "+message)
 		return
 	}
 
 	var discovery map[string]any
 	if err = common.DecodeJson(resp.Body, &discovery); err != nil {
-		common.ApiErrorMsg(c, "解析 Discovery 配置失败: "+err.Error())
+		common.ApiErrorMsg(c, "解析 Discovery configurationfailed: "+err.Error())
 		return
 	}
 
@@ -214,7 +214,7 @@ func FetchCustomOAuthDiscovery(c *gin.Context) {
 func CreateCustomOAuthProvider(c *gin.Context) {
 	var req CreateCustomOAuthProviderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ApiErrorMsg(c, "无效的请求参数: "+err.Error())
+		common.ApiErrorMsg(c, "无效的requestparameter: "+err.Error())
 		return
 	}
 
@@ -261,7 +261,7 @@ func CreateCustomOAuthProvider(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "创建成功",
+		"message": "创建successful",
 		"data":    toCustomOAuthProviderResponse(provider),
 	})
 }
@@ -299,7 +299,7 @@ func UpdateCustomOAuthProvider(c *gin.Context) {
 
 	var req UpdateCustomOAuthProviderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ApiErrorMsg(c, "无效的请求参数: "+err.Error())
+		common.ApiErrorMsg(c, "无效的requestparameter: "+err.Error())
 		return
 	}
 
@@ -394,7 +394,7 @@ func UpdateCustomOAuthProvider(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "更新成功",
+		"message": "更新successful",
 		"data":    toCustomOAuthProviderResponse(provider),
 	})
 }
@@ -419,11 +419,11 @@ func DeleteCustomOAuthProvider(c *gin.Context) {
 	count, err := model.GetBindingCountByProviderId(id)
 	if err != nil {
 		common.SysError("Failed to get binding count for provider " + strconv.Itoa(id) + ": " + err.Error())
-		common.ApiErrorMsg(c, "检查用户绑定时发生错误，请稍后重试")
+		common.ApiErrorMsg(c, "检查user绑定时发生error，请稍后重试")
 		return
 	}
 	if count > 0 {
-		common.ApiErrorMsg(c, "该 OAuth 提供商还有用户绑定，无法删除。请先解除所有用户绑定。")
+		common.ApiErrorMsg(c, "该 OAuth 提供商还有user绑定，无法删除。请先解除所有user绑定。")
 		return
 	}
 
@@ -437,7 +437,7 @@ func DeleteCustomOAuthProvider(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "删除成功",
+		"message": "删除successful",
 	})
 }
 
@@ -541,7 +541,7 @@ func UnbindCustomOAuth(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "解绑成功",
+		"message": "解绑successful",
 	})
 }
 

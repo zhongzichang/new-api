@@ -109,7 +109,7 @@ func RecordLog(userId int, logType int, content string) {
 	}
 }
 
-// RecordLogWithAdminInfo 记录操作日志，并将管理员相关信息存入 Other.admin_info，
+// RecordLogWithAdminInfo 记录操作日志，并将管理员相关info存入 Other.admin_info，
 func RecordLogWithAdminInfo(userId int, logType int, content string, adminInfo map[string]interface{}) {
 	if logType == LogTypeConsume && !common.LogConsumeEnabled {
 		return
@@ -134,7 +134,7 @@ func RecordLogWithAdminInfo(userId int, logType int, content string, adminInfo m
 }
 
 // buildOpField 构建语言无关的操作描述（写入 Other.op）。
-// 前端依据 action(稳定操作标识) + params(结构化参数) 在渲染期用 i18n 本地化展示，
+// 前端依据 action(稳定操作标识) + params(结构化parameter) 在渲染期用 i18n 本地化展示，
 // 因此不在数据库中存储自然语言句子。
 func buildOpField(action string, params map[string]interface{}) map[string]interface{} {
 	op := map[string]interface{}{
@@ -146,10 +146,10 @@ func buildOpField(action string, params map[string]interface{}) map[string]inter
 	return op
 }
 
-// RecordLoginLog 记录用户登录成功的审计日志（type=LogTypeLogin）。
-// username 由调用方传入（登录流程已持有用户对象），避免额外的数据库查询。
+// RecordLoginLog 记录user登录successful的审计日志（type=LogTypeLogin）。
+// username 由调用方传入（登录流程已持有user对象），避免额外的数据库查询。
 // content 为英文兜底文本（用于导出/经典前端）；action+params 供前端本地化渲染。
-// extra 可携带 login_method、user_agent 等附加信息（普通用户可见）。
+// extra 可携带 login_method、user_agent 等附加info（普通user可见）。
 func RecordLoginLog(userId int, username string, content string, ip string, action string, params map[string]interface{}, extra map[string]interface{}) {
 	other := map[string]interface{}{}
 	for k, v := range extra {
@@ -171,11 +171,11 @@ func RecordLoginLog(userId int, username string, content string, ip string, acti
 }
 
 // RecordOperationAuditLog 记录管理/高危操作审计日志（type=LogTypeManage）。
-// logUserId 为日志归属者（面向用户的操作如额度调整归属目标用户，资源类操作如渠道/系统设置归属操作者），
+// logUserId 为日志归属者（面向user的操作如quota调整归属目标user，资源类操作如channel/系统settings归属操作者），
 // username 内部按 logUserId 查询。content 为英文兜底文本（导出/经典前端用）。
-// action+params 写入 Other.op，供前端本地化渲染（普通用户可见，不含敏感信息）。
-// adminInfo 存放操作者身份（写入 Other.admin_info，普通用户查询时剥离）；
-// auditInfo 存放路由/方法/结果等中间件兜底信息（写入 Other.audit_info，普通用户查询时剥离）。
+// action+params 写入 Other.op，供前端本地化渲染（普通user可见，不含敏感info）。
+// adminInfo 存放操作者身份（写入 Other.admin_info，普通user查询时剥离）；
+// auditInfo 存放路由/方法/结果等中间件兜底info（写入 Other.audit_info，普通user查询时剥离）。
 func RecordOperationAuditLog(logUserId int, content string, ip string, action string, params map[string]interface{}, adminInfo map[string]interface{}, auditInfo map[string]interface{}) {
 	username, _ := GetUsernameById(logUserId, false)
 	other := map[string]interface{}{
@@ -507,12 +507,12 @@ func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int
 	err = tx.Model(&Log{}).Limit(logSearchCountLimit).Count(&total).Error
 	if err != nil {
 		common.SysError("failed to count user logs: " + err.Error())
-		return nil, 0, errors.New("查询日志失败")
+		return nil, 0, errors.New("查询日志failed")
 	}
 	err = tx.Order("logs.id desc").Limit(num).Offset(startIdx).Find(&logs).Error
 	if err != nil {
 		common.SysError("failed to search user logs: " + err.Error())
-		return nil, 0, errors.New("查询日志失败")
+		return nil, 0, errors.New("查询日志failed")
 	}
 
 	formatUserLogs(logs, startIdx)
@@ -571,11 +571,11 @@ func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelNa
 	// 执行查询
 	if err := tx.Scan(&stat).Error; err != nil {
 		common.SysError("failed to query log stat: " + err.Error())
-		return stat, errors.New("查询统计数据失败")
+		return stat, errors.New("查询统计数据failed")
 	}
 	if err := rpmTpmQuery.Scan(&stat).Error; err != nil {
 		common.SysError("failed to query rpm/tpm stat: " + err.Error())
-		return stat, errors.New("查询统计数据失败")
+		return stat, errors.New("查询统计数据failed")
 	}
 
 	return stat, nil

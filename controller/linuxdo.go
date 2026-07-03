@@ -215,7 +215,7 @@ func LinuxdoOAuth(c *gin.Context) {
 		if user.Id == 0 {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "用户已注销",
+				"message": "user已注销",
 			})
 			return
 		}
@@ -243,14 +243,14 @@ func LinuxdoOAuth(c *gin.Context) {
 			} else {
 				c.JSON(http.StatusOK, gin.H{
 					"success": false,
-					"message": "Linux DO 信任等级未达到管理员设置的最低信任等级",
+					"message": "Linux DO 信任等级未达到管理员settings的最低信任等级",
 				})
 				return
 			}
 		} else {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "管理员关闭了新用户注册",
+				"message": "管理员关闭了新User registration",
 			})
 			return
 		}
@@ -258,7 +258,7 @@ func LinuxdoOAuth(c *gin.Context) {
 
 	if user.Status != common.UserStatusEnabled {
 		c.JSON(http.StatusOK, gin.H{
-			"message": "用户已被封禁",
+			"message": "user已被封禁",
 			"success": false,
 		})
 		return

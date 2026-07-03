@@ -25,11 +25,11 @@ func TestStatus(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"success": false,
-			"message": "数据库连接失败",
+			"message": "Database connectionfailed",
 		})
 		return
 	}
-	// 获取HTTP统计信息
+	// 获取HTTP统计info
 	httpStats := middleware.GetStats()
 	c.JSON(http.StatusOK, gin.H{
 		"success":    true,
@@ -96,13 +96,13 @@ func GetStatus(c *gin.Context) {
 		"price":             operation_setting.Price,
 		"stripe_unit_price": setting.StripeUnitPrice,
 
-		// 面板启用开关
+		// 面板enabled开关
 		"api_info_enabled":      cs.ApiInfoEnabled,
 		"uptime_kuma_enabled":   cs.UptimeKumaEnabled,
 		"announcements_enabled": cs.AnnouncementsEnabled,
 		"faq_enabled":           cs.FAQEnabled,
 
-		// 模块管理配置
+		// 模块管理configuration
 		"HeaderNavModules":    common.OptionMap["HeaderNavModules"],
 		"SidebarModulesAdmin": common.OptionMap["SidebarModulesAdmin"],
 
@@ -122,7 +122,7 @@ func GetStatus(c *gin.Context) {
 		"checkin_enabled":             operation_setting.GetCheckinSetting().Enabled,
 	}
 
-	// 根据启用状态注入可选内容
+	// 根据enabledstatus注入可选内容
 	if cs.ApiInfoEnabled {
 		data["api_info"] = console_setting.GetApiInfo()
 	}
@@ -236,7 +236,7 @@ func SendEmailVerification(c *gin.Context) {
 	if err := common.Validate.Var(email, "required,email"); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": "无效的参数",
+			"message": "无效的parameter",
 		})
 		return
 	}
@@ -244,7 +244,7 @@ func SendEmailVerification(c *gin.Context) {
 	if len(parts) != 2 {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": "无效的邮箱地址",
+			"message": "无效的email地址",
 		})
 		return
 	}
@@ -271,7 +271,7 @@ func SendEmailVerification(c *gin.Context) {
 		if containsSpecialSymbols {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "管理员已启用邮箱地址别名限制，您的邮箱地址由于包含特殊符号而被拒绝。",
+				"message": "管理员已enabledemail地址别名限制，您的email地址由于包含特殊符号而被拒绝。",
 			})
 			return
 		}
@@ -286,10 +286,10 @@ func SendEmailVerification(c *gin.Context) {
 	}
 	code := common.GenerateVerificationCode(8)
 	common.RegisterVerificationCodeWithKey(email, code, common.EmailVerificationPurpose)
-	subject := fmt.Sprintf("%s邮箱验证邮件", common.SystemName)
-	content := fmt.Sprintf("<p>您好，你正在进行%s邮箱验证。</p>"+
-		"<p>您的验证码为: <strong>%s</strong></p>"+
-		"<p>验证码 %d 分钟内有效，如果不是本人操作，请忽略。</p>", common.SystemName, code, common.VerificationValidMinutes)
+	subject := fmt.Sprintf("%semailverification邮件", common.SystemName)
+	content := fmt.Sprintf("<p>您好，你正在进行%semailverification。</p>"+
+		"<p>您的verification code为: <strong>%s</strong></p>"+
+		"<p>verification code %d 分钟内有效，如果不是本人操作，请ignoring。</p>", common.SystemName, code, common.VerificationValidMinutes)
 	err := common.SendEmail(subject, email, content)
 	if err != nil {
 		common.ApiError(c, err)
@@ -307,7 +307,7 @@ func SendPasswordResetEmail(c *gin.Context) {
 	if err := common.Validate.Var(email, "required,email"); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": "无效的参数",
+			"message": "无效的parameter",
 		})
 		return
 	}
@@ -315,11 +315,11 @@ func SendPasswordResetEmail(c *gin.Context) {
 		code := common.GenerateVerificationCode(0)
 		common.RegisterVerificationCodeWithKey(email, code, common.PasswordResetPurpose)
 		link := fmt.Sprintf("%s/user/reset?email=%s&token=%s", system_setting.ServerAddress, email, code)
-		subject := fmt.Sprintf("%s密码重置", common.SystemName)
-		content := fmt.Sprintf("<p>您好，你正在进行%s密码重置。</p>"+
-			"<p>点击 <a href='%s'>此处</a> 进行密码重置。</p>"+
+		subject := fmt.Sprintf("%spassword重置", common.SystemName)
+		content := fmt.Sprintf("<p>您好，你正在进行%spassword重置。</p>"+
+			"<p>点击 <a href='%s'>此处</a> 进行password重置。</p>"+
 			"<p>如果链接无法点击，请尝试点击下面的链接或将其复制到浏览器中打开：<br> %s </p>"+
-			"<p>重置链接 %d 分钟内有效，如果不是本人操作，请忽略。</p>", common.SystemName, link, link, common.VerificationValidMinutes)
+			"<p>重置链接 %d 分钟内有效，如果不是本人操作，请ignoring。</p>", common.SystemName, link, link, common.VerificationValidMinutes)
 		err := common.SendEmail(subject, email, content)
 		if err != nil {
 			logger.LogError(c.Request.Context(), fmt.Sprintf("failed to send password reset email to %s: %s", email, err.Error()))
@@ -342,14 +342,14 @@ func ResetPassword(c *gin.Context) {
 	if req.Email == "" || req.Token == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": "无效的参数",
+			"message": "无效的parameter",
 		})
 		return
 	}
 	if !common.VerifyCodeWithKey(req.Email, req.Token, common.PasswordResetPurpose) {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": "重置链接非法或已过期",
+			"message": "重置链接非法或expired",
 		})
 		return
 	}

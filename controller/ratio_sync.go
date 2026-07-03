@@ -143,7 +143,7 @@ func FetchUpstreamRatios(c *gin.Context) {
 	var req dto.UpstreamRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		common.SysError("failed to bind upstream request: " + err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请求参数格式错误"})
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "requestparameter格式error"})
 		return
 	}
 
@@ -171,7 +171,7 @@ func FetchUpstreamRatios(c *gin.Context) {
 		dbChannels, err := model.GetChannelsByIds(intIds)
 		if err != nil {
 			logger.LogError(c.Request.Context(), "failed to query channels: "+err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询渠道失败"})
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询channelfailed"})
 			return
 		}
 		for _, ch := range dbChannels {
@@ -187,7 +187,7 @@ func FetchUpstreamRatios(c *gin.Context) {
 	}
 
 	if len(upstreams) == 0 {
-		c.JSON(http.StatusOK, gin.H{"success": false, "message": "无有效上游渠道"})
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "无有效上游channel"})
 		return
 	}
 
@@ -206,7 +206,7 @@ func FetchUpstreamRatios(c *gin.Context) {
 		if err != nil {
 			host = addr
 		}
-		// 对 github.io 优先尝试 IPv4，失败则回退 IPv6
+		// 对 github.io 优先尝试 IPv4，failed则回退 IPv6
 		if strings.HasSuffix(host, "github.io") {
 			if conn, err := dialer.DialContext(ctx, "tcp4", addr); err == nil {
 				return conn, nil
@@ -302,7 +302,7 @@ func FetchUpstreamRatios(c *gin.Context) {
 				return
 			}
 
-			// Content-Type 和响应体大小校验
+			// Content-Type 和response体大小校验
 			if ct := resp.Header.Get("Content-Type"); ct != "" && !strings.Contains(strings.ToLower(ct), "application/json") {
 				logger.LogWarn(c.Request.Context(), "unexpected content-type from "+chItem.Name+": "+ct)
 			}
@@ -557,7 +557,7 @@ func buildDifferences(localData map[string]any, successfulChannels []struct {
 
 	confidenceMap := make(map[string]map[string]bool)
 
-	// 预处理阶段：检查pricing接口的可信度
+	// 预processing阶段：检查pricing接口的可信度
 	for _, channel := range successfulChannels {
 		confidenceMap[channel.name] = make(map[string]bool)
 
@@ -565,7 +565,7 @@ func buildDifferences(localData map[string]any, successfulChannels []struct {
 		completionRatios := valueMap(channel.data["completion_ratio"])
 
 		if len(modelRatios) > 0 && len(completionRatios) > 0 {
-			// 遍历所有模型，检查是否满足不可信条件
+			// 遍历所有Model，检查是否满足不可信条件
 			for modelName := range allModels {
 				// 默认为可信
 				confidenceMap[channel.name][modelName] = true

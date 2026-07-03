@@ -16,17 +16,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// PerformanceStats 性能统计信息
+// PerformanceStats 性能统计info
 type PerformanceStats struct {
 	// 缓存统计
 	CacheStats common.DiskCacheStats `json:"cache_stats"`
 	// 系统内存统计
 	MemoryStats MemoryStats `json:"memory_stats"`
-	// 磁盘缓存目录信息
+	// 磁盘缓存目录info
 	DiskCacheInfo DiskCacheInfo `json:"disk_cache_info"`
-	// 磁盘空间信息
+	// 磁盘空间info
 	DiskSpaceInfo common.DiskSpaceInfo `json:"disk_space_info"`
-	// 配置信息
+	// configurationinfo
 	Config PerformanceConfig `json:"config"`
 }
 
@@ -44,7 +44,7 @@ type MemoryStats struct {
 	NumGoroutine int `json:"num_goroutine"`
 }
 
-// DiskCacheInfo 磁盘缓存目录信息
+// DiskCacheInfo 磁盘缓存目录info
 type DiskCacheInfo struct {
 	// 缓存目录路径
 	Path string `json:"path"`
@@ -56,9 +56,9 @@ type DiskCacheInfo struct {
 	TotalSize int64 `json:"total_size"`
 }
 
-// PerformanceConfig 性能配置
+// PerformanceConfig 性能configuration
 type PerformanceConfig struct {
-	// 是否启用磁盘缓存
+	// 是否enabled磁盘缓存
 	DiskCacheEnabled bool `json:"disk_cache_enabled"`
 	// 磁盘缓存阈值（MB）
 	DiskCacheThresholdMB int `json:"disk_cache_threshold_mb"`
@@ -69,7 +69,7 @@ type PerformanceConfig struct {
 	// 是否在容器中运行
 	IsRunningInContainer bool `json:"is_running_in_container"`
 
-	// MonitorEnabled 是否启用性能监控
+	// MonitorEnabled 是否enabled性能监控
 	MonitorEnabled bool `json:"monitor_enabled"`
 	// MonitorCPUThreshold CPU 使用率阈值（%）
 	MonitorCPUThreshold int `json:"monitor_cpu_threshold"`
@@ -79,20 +79,20 @@ type PerformanceConfig struct {
 	MonitorDiskThreshold int `json:"monitor_disk_threshold"`
 }
 
-// GetPerformanceStats 获取性能统计信息
+// GetPerformanceStats 获取性能统计info
 func GetPerformanceStats(c *gin.Context) {
 	// 不再每次获取统计都全量扫描磁盘，依赖原子计数器保证性能
-	// 仅在系统启动或显式清理时同步
+	// 仅在System startup或显式清理时同步
 	cacheStats := common.GetDiskCacheStats()
 
 	// 获取内存统计
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
-	// 获取磁盘缓存目录信息
+	// 获取磁盘缓存目录info
 	diskCacheInfo := getDiskCacheInfo()
 
-	// 获取配置信息
+	// 获取configurationinfo
 	diskConfig := common.GetDiskCacheConfig()
 	monitorConfig := common.GetPerformanceMonitorConfig()
 	config := PerformanceConfig{
@@ -107,16 +107,16 @@ func GetPerformanceStats(c *gin.Context) {
 		MonitorDiskThreshold:   monitorConfig.DiskThreshold,
 	}
 
-	// 获取磁盘空间信息
-	// 使用缓存的系统状态，避免频繁调用系统 API
+	// 获取磁盘空间info
+	// 使用缓存的系统status，避免频繁调用系统 API
 	systemStatus := common.GetSystemStatus()
 	diskSpaceInfo := common.DiskSpaceInfo{
 		UsedPercent: systemStatus.DiskUsage,
 	}
-	// 如果需要详细信息，可以按需获取，或者扩展 SystemStatus
+	// 如果需要详细info，可以按需获取，或者扩展 SystemStatus
 	// 这里为了保持接口兼容性，我们仍然调用 GetDiskSpaceInfo，但注意这可能会有性能开销
 	// 考虑到 GetPerformanceStats 是管理接口，频率较低，直接调用是可以接受的
-	// 但为了一致性，我们也可以考虑从 SystemStatus 中获取部分信息
+	// 但为了一致性，我们也可以考虑从 SystemStatus 中获取部分info
 	diskSpaceInfo = common.GetDiskSpaceInfo()
 
 	stats := PerformanceStats{
@@ -142,7 +142,7 @@ func GetPerformanceStats(c *gin.Context) {
 // ClearDiskCache 清理不活跃的磁盘缓存
 func ClearDiskCache(c *gin.Context) {
 	// 清理超过 10 分钟未使用的缓存文件
-	// 10 分钟是一个安全的阈值，确保正在进行的请求不会被误删
+	// 10 分钟是一个安全的阈值，确保正在进行的request不会被误删
 	err := common.CleanupOldDiskCacheFiles(10 * time.Minute)
 	if err != nil {
 		common.ApiError(c, err)
@@ -161,7 +161,7 @@ func ResetPerformanceStats(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "统计信息已重置",
+		"message": "统计info已重置",
 	})
 }
 
@@ -175,14 +175,14 @@ func ForceGC(c *gin.Context) {
 	})
 }
 
-// LogFileInfo 日志文件信息
+// LogFileInfo 日志文件info
 type LogFileInfo struct {
 	Name    string    `json:"name"`
 	Size    int64     `json:"size"`
 	ModTime time.Time `json:"mod_time"`
 }
 
-// LogFilesResponse 日志文件列表响应
+// LogFilesResponse 日志文件列表response
 type LogFilesResponse struct {
 	LogDir     string        `json:"log_dir"`
 	Enabled    bool          `json:"enabled"`
@@ -264,7 +264,7 @@ func GetLogFiles(c *gin.Context) {
 	common.ApiSuccess(c, resp)
 }
 
-// CleanupLogFiles 清理过期日志文件
+// CleanupLogFiles 清理expired日志文件
 func CleanupLogFiles(c *gin.Context) {
 	mode := c.Query("mode")
 	valueStr := c.Query("value")
@@ -339,7 +339,7 @@ func CleanupLogFiles(c *gin.Context) {
 	if len(failedFiles) > 0 {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": fmt.Sprintf("部分文件删除失败（%d/%d）", len(failedFiles), len(toDelete)),
+			"message": fmt.Sprintf("部分文件Failed to delete（%d/%d）", len(failedFiles), len(toDelete)),
 			"data":    result,
 		})
 		return
@@ -352,7 +352,7 @@ func CleanupLogFiles(c *gin.Context) {
 	})
 }
 
-// getDiskCacheInfo 获取磁盘缓存目录信息
+// getDiskCacheInfo 获取磁盘缓存目录info
 func getDiskCacheInfo() DiskCacheInfo {
 	// 使用统一的缓存目录
 	dir := common.GetDiskCacheDir()

@@ -24,7 +24,7 @@ type wechatLoginResponse struct {
 
 func getWeChatIdByCode(code string) (string, error) {
 	if code == "" {
-		return "", errors.New("无效的参数")
+		return "", errors.New("无效的parameter")
 	}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/api/wechat/user?code=%s", common.WeChatServerAddress, url.QueryEscape(code)), nil)
 	if err != nil {
@@ -48,7 +48,7 @@ func getWeChatIdByCode(code string) (string, error) {
 		return "", errors.New(res.Message)
 	}
 	if res.Data == "" {
-		return "", errors.New("验证码错误或已过期")
+		return "", errors.New("verification codeerror或expired")
 	}
 	return res.Data, nil
 }
@@ -85,7 +85,7 @@ func WeChatAuth(c *gin.Context) {
 		if user.Id == 0 {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "用户已注销",
+				"message": "user已注销",
 			})
 			return
 		}
@@ -106,7 +106,7 @@ func WeChatAuth(c *gin.Context) {
 		} else {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "管理员关闭了新用户注册",
+				"message": "管理员关闭了新User registration",
 			})
 			return
 		}
@@ -114,7 +114,7 @@ func WeChatAuth(c *gin.Context) {
 
 	if user.Status != common.UserStatusEnabled {
 		c.JSON(http.StatusOK, gin.H{
-			"message": "用户已被封禁",
+			"message": "user已被封禁",
 			"success": false,
 		})
 		return
@@ -138,7 +138,7 @@ func WeChatBind(c *gin.Context) {
 	if err := common.DecodeJson(c.Request.Body, &req); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": "无效的请求",
+			"message": "无效的request",
 		})
 		return
 	}

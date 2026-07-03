@@ -44,7 +44,7 @@ func GetAllUserTask(userId int, startIdx int, num int, queryParams TaskQueryPara
 		query = query.Where("mj_id = ?", queryParams.MjID)
 	}
 	if queryParams.StartTimestamp != "" {
-		// 假设您已将前端传来的时间戳转换为数据库所需的时间格式，并处理了时间戳的验证和解析
+		// 假设您已将前端传来的时间戳转换为数据库所需的时间格式，并processing了时间戳的verification和解析
 		query = query.Where("submit_time >= ?", queryParams.StartTimestamp)
 	}
 	if queryParams.EndTimestamp != "" {

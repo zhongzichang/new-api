@@ -37,7 +37,7 @@ type OidcUser struct {
 
 func getOidcUserInfoByCode(code string) (*OidcUser, error) {
 	if code == "" {
-		return nil, errors.New("无效的参数")
+		return nil, errors.New("无效的parameter")
 	}
 
 	values := url.Values{}
@@ -69,8 +69,8 @@ func getOidcUserInfoByCode(code string) (*OidcUser, error) {
 	}
 
 	if oidcResponse.AccessToken == "" {
-		common.SysLog("OIDC 获取 Token 失败，请检查设置！")
-		return nil, errors.New("OIDC 获取 Token 失败，请检查设置！")
+		common.SysLog("OIDC 获取 Token failed，请检查settings！")
+		return nil, errors.New("OIDC 获取 Token failed，请检查settings！")
 	}
 
 	req, err = http.NewRequest("GET", system_setting.GetOIDCSettings().UserInfoEndpoint, nil)
@@ -85,8 +85,8 @@ func getOidcUserInfoByCode(code string) (*OidcUser, error) {
 	}
 	defer res2.Body.Close()
 	if res2.StatusCode != http.StatusOK {
-		common.SysLog("OIDC 获取用户信息失败！请检查设置！")
-		return nil, errors.New("OIDC 获取用户信息失败！请检查设置！")
+		common.SysLog("OIDC Failed to get user info！请检查settings！")
+		return nil, errors.New("OIDC Failed to get user info！请检查settings！")
 	}
 
 	var oidcUser OidcUser
@@ -95,8 +95,8 @@ func getOidcUserInfoByCode(code string) (*OidcUser, error) {
 		return nil, err
 	}
 	if oidcUser.OpenID == "" || oidcUser.Email == "" {
-		common.SysLog("OIDC 获取用户信息为空！请检查设置！")
-		return nil, errors.New("OIDC 获取用户信息为空！请检查设置！")
+		common.SysLog("OIDC 获取userinfo为空！请检查settings！")
+		return nil, errors.New("OIDC 获取userinfo为空！请检查settings！")
 	}
 	return &oidcUser, nil
 }
@@ -165,7 +165,7 @@ func OidcAuth(c *gin.Context) {
 		} else {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "管理员关闭了新用户注册",
+				"message": "管理员关闭了新User registration",
 			})
 			return
 		}
@@ -173,7 +173,7 @@ func OidcAuth(c *gin.Context) {
 
 	if user.Status != common.UserStatusEnabled {
 		c.JSON(http.StatusOK, gin.H{
-			"message": "用户已被封禁",
+			"message": "user已被封禁",
 			"success": false,
 		})
 		return

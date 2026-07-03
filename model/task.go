@@ -52,7 +52,7 @@ type Task struct {
 	ChannelId  int                   `json:"channel_id" gorm:"index"`
 	Quota      int                   `json:"quota"`
 	Action     string                `json:"action" gorm:"type:varchar(40);index"` // 任务类型, song, lyrics, description-mode
-	Status     TaskStatus            `json:"status" gorm:"type:varchar(20);index"` // 任务状态
+	Status     TaskStatus            `json:"status" gorm:"type:varchar(20);index"` // 任务status
 	FailReason string                `json:"fail_reason"`
 	SubmitTime int64                 `json:"submit_time" gorm:"index"`
 	StartTime  int64                 `json:"start_time" gorm:"index"`
@@ -60,7 +60,7 @@ type Task struct {
 	Progress   string                `json:"progress" gorm:"type:varchar(20);index"`
 	Properties Properties            `json:"properties" gorm:"type:json"`
 	Username   string                `json:"username,omitempty" gorm:"-"`
-	// 禁止返回给用户，内部可能包含key等隐私信息
+	// 禁止返回给user，内部可能包含key等隐私info
 	PrivateData TaskPrivateData `json:"-" gorm:"column:private_data;type:json"`
 	Data        json.RawMessage `json:"data" gorm:"type:json"`
 }
@@ -99,22 +99,22 @@ func (m Properties) Value() (driver.Value, error) {
 type TaskPrivateData struct {
 	Key            string `json:"key,omitempty"`
 	UpstreamTaskID string `json:"upstream_task_id,omitempty"` // 上游真实 task ID
-	ResultURL      string `json:"result_url,omitempty"`       // 任务成功后的结果 URL（视频地址等）
+	ResultURL      string `json:"result_url,omitempty"`       // 任务successful后的结果 URL（视频地址等）
 	// 计费上下文：用于异步退款/差额结算（轮询阶段读取）
 	BillingSource  string              `json:"billing_source,omitempty"`  // "wallet" 或 "subscription"
-	SubscriptionId int                 `json:"subscription_id,omitempty"` // 订阅 ID，用于订阅退款
-	TokenId        int                 `json:"token_id,omitempty"`        // 令牌 ID，用于令牌额度退款
-	BillingContext *TaskBillingContext `json:"billing_context,omitempty"` // 计费参数快照（用于轮询阶段重新计算）
+	SubscriptionId int                 `json:"subscription_id,omitempty"` // subscription ID，用于subscription退款
+	TokenId        int                 `json:"token_id,omitempty"`        // token ID，用于tokenquota退款
+	BillingContext *TaskBillingContext `json:"billing_context,omitempty"` // 计费parameter快照（用于轮询阶段重新计算）
 }
 
-// TaskBillingContext 记录任务提交时的计费参数，以便轮询阶段可以重新计算额度。
+// TaskBillingContext 记录任务提交时的计费parameter，以便轮询阶段可以重新计算quota。
 type TaskBillingContext struct {
-	ModelPrice      float64            `json:"model_price,omitempty"`       // 模型单价
+	ModelPrice      float64            `json:"model_price,omitempty"`       // model单价
 	GroupRatio      float64            `json:"group_ratio,omitempty"`       // 分组倍率
-	ModelRatio      float64            `json:"model_ratio,omitempty"`       // 模型倍率
+	ModelRatio      float64            `json:"model_ratio,omitempty"`       // model倍率
 	OtherRatios     map[string]float64 `json:"other_ratios,omitempty"`      // 附加倍率（时长、分辨率等）
-	OriginModelName string             `json:"origin_model_name,omitempty"` // 模型名称，必须为OriginModelName
-	PerCallBilling  bool               `json:"per_call_billing,omitempty"`  // 按次计费：跳过轮询阶段的差额结算
+	OriginModelName string             `json:"origin_model_name,omitempty"` // model名称，必须为OriginModelName
+	PerCallBilling  bool               `json:"per_call_billing,omitempty"`  // 按次计费：skipping轮询阶段的差额结算
 }
 
 // GetUpstreamTaskID 获取上游真实 task ID（用于与 provider 通信）
@@ -228,7 +228,7 @@ func TaskGetAllUserTask(userId int, startIdx int, num int, queryParams SyncTaskQ
 		query = query.Where("platform = ?", queryParams.Platform)
 	}
 	if queryParams.StartTimestamp != 0 {
-		// 假设您已将前端传来的时间戳转换为数据库所需的时间格式，并处理了时间戳的验证和解析
+		// 假设您已将前端传来的时间戳转换为数据库所需的时间格式，并processing了时间戳的verification和解析
 		query = query.Where("submit_time >= ?", queryParams.StartTimestamp)
 	}
 	if queryParams.EndTimestamp != 0 {

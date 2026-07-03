@@ -77,7 +77,7 @@ func UpdateSubscriptionPreference(c *gin.Context) {
 	userId := c.GetInt("id")
 	var req BillingPreferenceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ApiErrorMsg(c, "参数错误")
+		common.ApiErrorMsg(c, "Invalid parameters")
 		return
 	}
 	pref := common.NormalizeBillingPreference(req.BillingPreference)
@@ -105,7 +105,7 @@ func SubscriptionRequestBalancePay(c *gin.Context) {
 	userId := c.GetInt("id")
 	var req SubscriptionBalancePayRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.PlanId <= 0 {
-		common.ApiErrorMsg(c, "参数错误")
+		common.ApiErrorMsg(c, "Invalid parameters")
 		return
 	}
 
@@ -145,7 +145,7 @@ func AdminCreateSubscriptionPlan(c *gin.Context) {
 
 	var req AdminUpsertSubscriptionPlanRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ApiErrorMsg(c, "参数错误")
+		common.ApiErrorMsg(c, "Invalid parameters")
 		return
 	}
 	req.Plan.Id = 0
@@ -179,7 +179,7 @@ func AdminCreateSubscriptionPlan(c *gin.Context) {
 		return
 	}
 	if req.Plan.TotalAmount < 0 {
-		common.ApiErrorMsg(c, "总额度不能为负数")
+		common.ApiErrorMsg(c, "总quota不能为负数")
 		return
 	}
 	req.Plan.UpgradeGroup = strings.TrimSpace(req.Plan.UpgradeGroup)
@@ -215,7 +215,7 @@ func AdminUpdateSubscriptionPlan(c *gin.Context) {
 	}
 	var req AdminUpsertSubscriptionPlanRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		common.ApiErrorMsg(c, "参数错误")
+		common.ApiErrorMsg(c, "Invalid parameters")
 		return
 	}
 	if strings.TrimSpace(req.Plan.Title) == "" {
@@ -246,7 +246,7 @@ func AdminUpdateSubscriptionPlan(c *gin.Context) {
 		return
 	}
 	if req.Plan.TotalAmount < 0 {
-		common.ApiErrorMsg(c, "总额度不能为负数")
+		common.ApiErrorMsg(c, "总quota不能为负数")
 		return
 	}
 	req.Plan.UpgradeGroup = strings.TrimSpace(req.Plan.UpgradeGroup)
@@ -316,7 +316,7 @@ func AdminUpdateSubscriptionPlanStatus(c *gin.Context) {
 	}
 	var req AdminUpdateSubscriptionPlanStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Enabled == nil {
-		common.ApiErrorMsg(c, "参数错误")
+		common.ApiErrorMsg(c, "Invalid parameters")
 		return
 	}
 	if err := model.DB.Model(&model.SubscriptionPlan{}).Where("id = ?", id).Update("enabled", *req.Enabled).Error; err != nil {
@@ -339,7 +339,7 @@ func AdminBindSubscription(c *gin.Context) {
 
 	var req AdminBindSubscriptionRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.UserId <= 0 || req.PlanId <= 0 {
-		common.ApiErrorMsg(c, "参数错误")
+		common.ApiErrorMsg(c, "Invalid parameters")
 		return
 	}
 	msg, err := model.AdminBindSubscription(req.UserId, req.PlanId, "")
@@ -359,7 +359,7 @@ func AdminBindSubscription(c *gin.Context) {
 func AdminListUserSubscriptions(c *gin.Context) {
 	userId, _ := strconv.Atoi(c.Param("id"))
 	if userId <= 0 {
-		common.ApiErrorMsg(c, "无效的用户ID")
+		common.ApiErrorMsg(c, "无效的user ID")
 		return
 	}
 	subs, err := model.GetAllUserSubscriptions(userId)
@@ -382,12 +382,12 @@ func AdminCreateUserSubscription(c *gin.Context) {
 
 	userId, _ := strconv.Atoi(c.Param("id"))
 	if userId <= 0 {
-		common.ApiErrorMsg(c, "无效的用户ID")
+		common.ApiErrorMsg(c, "无效的user ID")
 		return
 	}
 	var req AdminCreateUserSubscriptionRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.PlanId <= 0 {
-		common.ApiErrorMsg(c, "参数错误")
+		common.ApiErrorMsg(c, "Invalid parameters")
 		return
 	}
 	msg, err := model.AdminBindSubscription(userId, req.PlanId, "")
@@ -406,7 +406,7 @@ func AdminCreateUserSubscription(c *gin.Context) {
 func AdminInvalidateUserSubscription(c *gin.Context) {
 	subId, _ := strconv.Atoi(c.Param("id"))
 	if subId <= 0 {
-		common.ApiErrorMsg(c, "无效的订阅ID")
+		common.ApiErrorMsg(c, "无效的subscriptionID")
 		return
 	}
 	msg, err := model.AdminInvalidateUserSubscription(subId)
@@ -425,7 +425,7 @@ func AdminInvalidateUserSubscription(c *gin.Context) {
 func AdminDeleteUserSubscription(c *gin.Context) {
 	subId, _ := strconv.Atoi(c.Param("id"))
 	if subId <= 0 {
-		common.ApiErrorMsg(c, "无效的订阅ID")
+		common.ApiErrorMsg(c, "无效的subscriptionID")
 		return
 	}
 	msg, err := model.AdminDeleteUserSubscription(subId)

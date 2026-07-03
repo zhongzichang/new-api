@@ -12,15 +12,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetCheckinStatus 获取用户签到状态和历史记录
+// GetCheckinStatus 获取user签到status和历史记录
 func GetCheckinStatus(c *gin.Context) {
 	setting := operation_setting.GetCheckinSetting()
 	if !setting.Enabled {
-		common.ApiErrorMsg(c, "签到功能未启用")
+		common.ApiErrorMsg(c, "签到功能未enabled")
 		return
 	}
 	userId := c.GetInt("id")
-	// 获取月份参数，默认为当前月份
+	// 获取月份parameter，默认为当前月份
 	month := c.DefaultQuery("month", time.Now().Format("2006-01"))
 
 	stats, err := model.GetUserCheckinStats(userId, month)
@@ -43,11 +43,11 @@ func GetCheckinStatus(c *gin.Context) {
 	})
 }
 
-// DoCheckin 执行用户签到
+// DoCheckin 执行user签到
 func DoCheckin(c *gin.Context) {
 	setting := operation_setting.GetCheckinSetting()
 	if !setting.Enabled {
-		common.ApiErrorMsg(c, "签到功能未启用")
+		common.ApiErrorMsg(c, "签到功能未enabled")
 		return
 	}
 
@@ -61,10 +61,10 @@ func DoCheckin(c *gin.Context) {
 		})
 		return
 	}
-	model.RecordLog(userId, model.LogTypeSystem, fmt.Sprintf("用户签到，获得额度 %s", logger.LogQuota(checkin.QuotaAwarded)))
+	model.RecordLog(userId, model.LogTypeSystem, fmt.Sprintf("User check-in, awarded quota %s", logger.LogQuota(checkin.QuotaAwarded)))
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "签到成功",
+		"message": "签到successful",
 		"data": gin.H{
 			"quota_awarded": checkin.QuotaAwarded,
 			"checkin_date":  checkin.CheckinDate},

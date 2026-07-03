@@ -23,7 +23,7 @@ type Redemption struct {
 	Count        int            `json:"count" gorm:"-:all"` // only for api request
 	UsedUserId   int            `json:"used_user_id"`
 	DeletedAt    gorm.DeletedAt `gorm:"index"`
-	ExpiredTime  int64          `json:"expired_time" gorm:"bigint"` // 过期时间，0 表示不过期
+	ExpiredTime  int64          `json:"expired_time" gorm:"bigint"` // expired时间，0 表示不expired
 }
 
 func GetAllRedemptions(startIdx int, num int) (redemptions []*Redemption, total int64, err error) {
@@ -104,7 +104,7 @@ func SearchRedemptions(keyword string, startIdx int, num int) (redemptions []*Re
 
 func GetRedemptionById(id int) (*Redemption, error) {
 	if id == 0 {
-		return nil, errors.New("id 为空！")
+		return nil, errors.New("id 为空!")
 	}
 	redemption := Redemption{Id: id}
 	var err error = nil
@@ -135,7 +135,7 @@ func Redeem(key string, userId int) (quota int, err error) {
 			return errors.New("该兑换码已被使用")
 		}
 		if redemption.ExpiredTime != 0 && redemption.ExpiredTime < common.GetTimestamp() {
-			return errors.New("该兑换码已过期")
+			return errors.New("该兑换码已expired")
 		}
 		err = tx.Model(&User{}).Where("id = ?", userId).Update("quota", gorm.Expr("quota + ?", redemption.Quota)).Error
 		if err != nil {
@@ -151,7 +151,7 @@ func Redeem(key string, userId int) (quota int, err error) {
 		common.SysError("redemption failed: " + err.Error())
 		return 0, ErrRedeemFailed
 	}
-	RecordLog(userId, LogTypeTopup, fmt.Sprintf("通过兑换码充值 %s，兑换码ID %d", logger.LogQuota(redemption.Quota), redemption.Id))
+	RecordLog(userId, LogTypeTopup, fmt.Sprintf("Redeemed via redemption code %s，redemption code ID %d", logger.LogQuota(redemption.Quota), redemption.Id))
 	return redemption.Quota, nil
 }
 
@@ -181,7 +181,7 @@ func (redemption *Redemption) Delete() error {
 
 func DeleteRedemptionById(id int) (err error) {
 	if id == 0 {
-		return errors.New("id 为空！")
+		return errors.New("id 为空!")
 	}
 	redemption := Redemption{Id: id}
 	err = DB.Where(redemption).First(&redemption).Error

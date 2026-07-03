@@ -40,7 +40,7 @@ func GetSubscription(c *gin.Context) {
 	}
 	quota := remainQuota + usedQuota
 	amount := float64(quota)
-	// OpenAI 兼容接口中的 *_USD 字段含义保持“额度单位”对应值：
+	// OpenAI 兼容接口中的 *_USD 字段含义保持“quota单位”对应值：
 	// 我们将其解释为以“站点展示类型”为准：
 	// - USD: 直接除以 QuotaPerUnit
 	// - CNY: 先转 USD 再乘汇率

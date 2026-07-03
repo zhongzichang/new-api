@@ -58,7 +58,7 @@ func invalidateUserCache(userId int) error {
 }
 
 // InvalidateUserCache is the exported version of invalidateUserCache.
-// 供 controller 等上层包在用户状态变更（如禁用、删除、角色变更）后主动清理缓存。
+// 供 controller 等上层包在userstatus变更（如禁用、删除、角色变更）后主动清理缓存。
 func InvalidateUserCache(userId int) error {
 	return invalidateUserCache(userId)
 }

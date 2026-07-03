@@ -45,7 +45,7 @@ func GetCodexChannelUsage(c *gin.Context) {
 	oauthKey, err := codex.ParseOAuthKey(strings.TrimSpace(ch.Key))
 	if err != nil {
 		common.SysError("failed to parse oauth key: " + err.Error())
-		c.JSON(http.StatusOK, gin.H{"success": false, "message": "解析凭证失败，请检查渠道配置"})
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "解析凭证failed，请检查channelconfiguration"})
 		return
 	}
 	accessToken := strings.TrimSpace(oauthKey.AccessToken)
@@ -71,7 +71,7 @@ func GetCodexChannelUsage(c *gin.Context) {
 	statusCode, body, err := service.FetchCodexWhamUsage(ctx, client, ch.GetBaseURL(), accessToken, accountID)
 	if err != nil {
 		common.SysError("failed to fetch codex usage: " + err.Error())
-		c.JSON(http.StatusOK, gin.H{"success": false, "message": "获取用量信息失败，请稍后重试"})
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "获取用量infofailed，请稍后重试"})
 		return
 	}
 
@@ -101,7 +101,7 @@ func GetCodexChannelUsage(c *gin.Context) {
 			statusCode, body, err = service.FetchCodexWhamUsage(ctx2, client, ch.GetBaseURL(), oauthKey.AccessToken, accountID)
 			if err != nil {
 				common.SysError("failed to fetch codex usage after refresh: " + err.Error())
-				c.JSON(http.StatusOK, gin.H{"success": false, "message": "获取用量信息失败，请稍后重试"})
+				c.JSON(http.StatusOK, gin.H{"success": false, "message": "获取用量infofailed，请稍后重试"})
 				return
 			}
 		}

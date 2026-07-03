@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// PrefillGroup 用于存储可复用的“组”信息，例如模型组、标签组、端点组等。
+// PrefillGroup 用于存储可复用的“组”info，例如model组、标签组、端点组等。
 // Name 字段保持唯一，用于在前端下拉框中展示。
 // Type 字段用于区分组的类别，可选值如：model、tag、endpoint。
 // Items 字段使用 JSON 数组保存对应类型的字符串集合，示例：

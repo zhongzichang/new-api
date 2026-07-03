@@ -30,7 +30,7 @@ type GitHubUser struct {
 
 func getGitHubUserInfoByCode(code string) (*GitHubUser, error) {
 	if code == "" {
-		return nil, errors.New("无效的参数")
+		return nil, errors.New("无效的parameter")
 	}
 	values := map[string]string{"client_id": common.GitHubClientId, "client_secret": common.GitHubClientSecret, "code": code}
 	jsonData, err := json.Marshal(values)
@@ -74,7 +74,7 @@ func getGitHubUserInfoByCode(code string) (*GitHubUser, error) {
 		return nil, err
 	}
 	if githubUser.Login == "" {
-		return nil, errors.New("返回值非法，用户字段为空，请稍后重试！")
+		return nil, errors.New("返回值非法，user字段为空，请稍后重试！")
 	}
 	return &githubUser, nil
 }
@@ -126,7 +126,7 @@ func GitHubOAuth(c *gin.Context) {
 		if user.Id == 0 {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "用户已注销",
+				"message": "user已注销",
 			})
 			return
 		}
@@ -157,7 +157,7 @@ func GitHubOAuth(c *gin.Context) {
 		} else {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "管理员关闭了新用户注册",
+				"message": "管理员关闭了新User registration",
 			})
 			return
 		}
@@ -165,7 +165,7 @@ func GitHubOAuth(c *gin.Context) {
 
 	if user.Status != common.UserStatusEnabled {
 		c.JSON(http.StatusOK, gin.H{
-			"message": "用户已被封禁",
+			"message": "user已被封禁",
 			"success": false,
 		})
 		return

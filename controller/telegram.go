@@ -26,7 +26,7 @@ func TelegramBind(c *gin.Context) {
 	params := c.Request.URL.Query()
 	if !checkTelegramAuthorization(params, common.TelegramBotToken) {
 		c.JSON(200, gin.H{
-			"message": "无效的请求",
+			"message": "无效的request",
 			"success": false,
 		})
 		return
@@ -53,7 +53,7 @@ func TelegramBind(c *gin.Context) {
 	if user.Id == 0 {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": "用户已注销",
+			"message": "user已注销",
 		})
 		return
 	}
@@ -80,7 +80,7 @@ func TelegramLogin(c *gin.Context) {
 	params := c.Request.URL.Query()
 	if !checkTelegramAuthorization(params, common.TelegramBotToken) {
 		c.JSON(200, gin.H{
-			"message": "无效的请求",
+			"message": "无效的request",
 			"success": false,
 		})
 		return

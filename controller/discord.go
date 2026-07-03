@@ -35,7 +35,7 @@ type DiscordUser struct {
 
 func getDiscordUserInfoByCode(code string) (*DiscordUser, error) {
 	if code == "" {
-		return nil, errors.New("无效的参数")
+		return nil, errors.New("无效的parameter")
 	}
 
 	values := url.Values{}
@@ -67,8 +67,8 @@ func getDiscordUserInfoByCode(code string) (*DiscordUser, error) {
 	}
 
 	if discordResponse.AccessToken == "" {
-		common.SysError("Discord 获取 Token 失败，请检查设置！")
-		return nil, errors.New("Discord 获取 Token 失败，请检查设置！")
+		common.SysError("Discord 获取 Token failed，请检查settings！")
+		return nil, errors.New("Discord 获取 Token failed，请检查settings！")
 	}
 
 	req, err = http.NewRequest("GET", "https://discord.com/api/v10/users/@me", nil)
@@ -83,8 +83,8 @@ func getDiscordUserInfoByCode(code string) (*DiscordUser, error) {
 	}
 	defer res2.Body.Close()
 	if res2.StatusCode != http.StatusOK {
-		common.SysError("Discord 获取用户信息失败！请检查设置！")
-		return nil, errors.New("Discord 获取用户信息失败！请检查设置！")
+		common.SysError("Discord Failed to get user info！请检查settings！")
+		return nil, errors.New("Discord Failed to get user info！请检查settings！")
 	}
 
 	var discordUser DiscordUser
@@ -93,8 +93,8 @@ func getDiscordUserInfoByCode(code string) (*DiscordUser, error) {
 		return nil, err
 	}
 	if discordUser.UID == "" || discordUser.ID == "" {
-		common.SysError("Discord 获取用户信息为空！请检查设置！")
-		return nil, errors.New("Discord 获取用户信息为空！请检查设置！")
+		common.SysError("Discord 获取userinfo为空！请检查settings！")
+		return nil, errors.New("Discord 获取userinfo为空！请检查settings！")
 	}
 	return &discordUser, nil
 }
@@ -162,7 +162,7 @@ func DiscordOAuth(c *gin.Context) {
 		} else {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "管理员关闭了新用户注册",
+				"message": "管理员关闭了新User registration",
 			})
 			return
 		}
@@ -170,7 +170,7 @@ func DiscordOAuth(c *gin.Context) {
 
 	if user.Status != common.UserStatusEnabled {
 		c.JSON(http.StatusOK, gin.H{
-			"message": "用户已被封禁",
+			"message": "user已被封禁",
 			"success": false,
 		})
 		return

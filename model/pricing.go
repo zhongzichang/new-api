@@ -53,7 +53,7 @@ var (
 	lastGetPricingTime   time.Time
 	updatePricingLock    sync.Mutex
 
-	// 缓存映射：模型名 -> 启用分组 / 计费类型
+	// 缓存映射：model名 -> 启用分组 / 计费类型
 	modelEnableGroups     = make(map[string][]string)
 	modelQuotaTypeMap     = make(map[string]int)
 	modelEnableGroupsLock = sync.RWMutex{}
@@ -87,7 +87,7 @@ func InvalidatePricingCache() {
 	lastGetPricingTime = time.Time{}
 }
 
-// GetVendors 返回当前定价接口使用到的供应商信息
+// GetVendors 返回当前定价接口使用到的供应商info
 func GetVendors() []PricingVendor {
 	if time.Since(lastGetPricingTime) > time.Minute*1 || len(pricingMap) == 0 {
 		// 保证先刷新一次
@@ -115,7 +115,7 @@ func updatePricing() {
 		common.SysLog(fmt.Sprintf("GetAllEnableAbilityWithChannels error: %v", err))
 		return
 	}
-	// 预加载模型元数据与供应商一次，避免循环查询
+	// 预加载model元数据与供应商一次，避免循环查询
 	var allMeta []Model
 	_ = DB.Find(&allMeta).Error
 	metaMap := make(map[string]*Model)
@@ -138,7 +138,7 @@ func updatePricing() {
 		}
 	}
 
-	// 将非精确规则模型匹配到 metaMap
+	// 将非精确规则model匹配到 metaMap
 	for _, m := range prefixList {
 		for _, pricingModel := range enableAbilities {
 			if strings.HasPrefix(pricingModel.Model, m.ModelName) {
@@ -200,7 +200,7 @@ func updatePricing() {
 		groups.Add(ability.Group)
 	}
 
-	//这里使用切片而不是Set，因为一个模型可能支持多个端点类型，并且第一个端点是优先使用端点
+	//这里使用切片而不是Set，因为一个model可能支持多个端点类型，并且第一个端点是优先使用端点
 	modelSupportEndpointsStr := make(map[string][]string)
 
 	// 先根据已有能力填充原生端点
@@ -215,7 +215,7 @@ func updatePricing() {
 		modelSupportEndpointsStr[ability.Model] = endpoints
 	}
 
-	// 再补充模型自定义端点：若配置有效则替换默认端点，不做合并
+	// 再补充model自定义端点：若configuration有效则替换默认端点，不做合并
 	for modelName, meta := range metaMap {
 		if strings.TrimSpace(meta.Endpoints) == "" {
 			continue
@@ -294,9 +294,9 @@ func updatePricing() {
 			SupportedEndpointTypes: modelSupportEndpointTypes[model],
 		}
 
-		// 补充模型元数据（描述、标签、供应商、状态）
+		// 补充model元数据（描述、标签、供应商、status）
 		if meta, ok := metaMap[model]; ok {
-			// 若模型被禁用(status!=1)，则直接跳过，不返回给前端
+			// 若model被禁用(status!=1)，则直接skipping，不返回给前端
 			if meta.Status != 1 {
 				continue
 			}

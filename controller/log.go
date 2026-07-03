@@ -76,7 +76,7 @@ func GetLogByKey(c *gin.Context) {
 	if tokenId == 0 {
 		c.JSON(200, gin.H{
 			"success": false,
-			"message": "无效的令牌",
+			"message": "无效的token",
 		})
 		return
 	}

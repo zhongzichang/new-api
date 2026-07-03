@@ -24,13 +24,13 @@ import (
 func GetTopUpInfo(c *gin.Context) {
 	complianceConfirmed := operation_setting.IsPaymentComplianceConfirmed()
 
-	// 获取支付方式
+	// 获取payment method
 	payMethods := operation_setting.PayMethods
 	if !complianceConfirmed {
 		payMethods = []map[string]string{}
 	}
 
-	// 如果启用了 Stripe 支付，添加到支付方法列表
+	// 如果enabled了 Stripe payment，添加到payment方法列表
 	if isStripeTopUpEnabled() {
 		// 检查是否已经包含 Stripe
 		hasStripe := false
@@ -73,7 +73,7 @@ func GetTopUpInfo(c *gin.Context) {
 		}
 	}
 
-	// 如果启用了 Waffo 支付，添加到支付方法列表
+	// 如果enabled了 Waffo payment，添加到payment方法列表
 	enableWaffo := isWaffoTopUpEnabled()
 	if enableWaffo {
 		hasWaffo := false
@@ -186,7 +186,7 @@ func GetEpayClient() *epay.Client {
 
 func getPayMoney(amount int64, group string) float64 {
 	dAmount := decimal.NewFromInt(amount)
-	// 充值金额以“展示类型”为准：
+	// top-up amount以“展示类型”为准：
 	// - USD/CNY: 前端传 amount 为金额单位；TOKENS: 前端传 tokens，需要换成 USD 金额
 	if operation_setting.GetQuotaDisplayType() == operation_setting.QuotaDisplayTypeTokens {
 		dQuotaPerUnit := decimal.NewFromFloat(common.QuotaPerUnit)
@@ -273,7 +273,7 @@ func RequestEpay(c *gin.Context) {
 		ReturnUrl:      returnUrl,
 	})
 	if err != nil {
-		logger.LogError(c.Request.Context(), fmt.Sprintf("易支付 拉起支付失败 user_id=%d trade_no=%s payment_method=%s amount=%d error=%q", id, tradeNo, req.PaymentMethod, req.Amount, err.Error()))
+		logger.LogError(c.Request.Context(), fmt.Sprintf("Epay Failed to initiate payment user_id=%d trade_no=%s payment_method=%s amount=%d error=%q", id, tradeNo, req.PaymentMethod, req.Amount, err.Error()))
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Failed to initiate payment"})
 		return
 	}
@@ -295,11 +295,11 @@ func RequestEpay(c *gin.Context) {
 	}
 	err = topUp.Insert()
 	if err != nil {
-		logger.LogError(c.Request.Context(), fmt.Sprintf("易支付 创建充值订单失败 user_id=%d trade_no=%s payment_method=%s amount=%d error=%q", id, tradeNo, req.PaymentMethod, req.Amount, err.Error()))
+		logger.LogError(c.Request.Context(), fmt.Sprintf("Epay Failed to create top-up order user_id=%d trade_no=%s payment_method=%s amount=%d error=%q", id, tradeNo, req.PaymentMethod, req.Amount, err.Error()))
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Failed to create order"})
 		return
 	}
-	logger.LogInfo(c.Request.Context(), fmt.Sprintf("易支付 充值订单创建成功 user_id=%d trade_no=%s payment_method=%s amount=%d money=%.2f uri=%q params=%q", id, tradeNo, req.PaymentMethod, req.Amount, payMoney, uri, common.GetJsonString(params)))
+	logger.LogInfo(c.Request.Context(), fmt.Sprintf("Epay Top-up order created successfully user_id=%d trade_no=%s payment_method=%s amount=%d money=%.2f uri=%q params=%q", id, tradeNo, req.PaymentMethod, req.Amount, payMoney, uri, common.GetJsonString(params)))
 	c.JSON(http.StatusOK, gin.H{"message": "success", "data": params, "url": uri})
 }
 
@@ -313,7 +313,7 @@ type refCountedMutex struct {
 	refCount int
 }
 
-// LockOrder 尝试对给定订单号加锁
+// LockOrder 尝试对给定order number加锁
 func LockOrder(tradeNo string) {
 	createLock.Lock()
 	var rcm *refCountedMutex
@@ -328,7 +328,7 @@ func LockOrder(tradeNo string) {
 	rcm.mu.Lock()
 }
 
-// UnlockOrder 释放给定订单号的锁
+// UnlockOrder 释放给定order number的锁
 func UnlockOrder(tradeNo string) {
 	v, ok := orderLocks.Load(tradeNo)
 	if !ok {
@@ -347,7 +347,7 @@ func UnlockOrder(tradeNo string) {
 
 func EpayNotify(c *gin.Context) {
 	if !isEpayWebhookEnabled() {
-		logger.LogWarn(c.Request.Context(), fmt.Sprintf("易支付 webhook 被拒绝 reason=webhook_disabled path=%q client_ip=%s", c.Request.RequestURI, c.ClientIP()))
+		logger.LogWarn(c.Request.Context(), fmt.Sprintf("Epay webhook rejected reason=webhook_disabled path=%q client_ip=%s", c.Request.RequestURI, c.ClientIP()))
 		_, _ = c.Writer.Write([]byte("fail"))
 		return
 	}
@@ -355,9 +355,9 @@ func EpayNotify(c *gin.Context) {
 	var params map[string]string
 
 	if c.Request.Method == "POST" {
-		// POST 请求：从 POST body 解析参数
+		// POST request：从 POST body 解析parameter
 		if err := c.Request.ParseForm(); err != nil {
-			logger.LogError(c.Request.Context(), fmt.Sprintf("易支付 webhook POST 表单解析失败 path=%q client_ip=%s error=%q", c.Request.RequestURI, c.ClientIP(), err.Error()))
+			logger.LogError(c.Request.Context(), fmt.Sprintf("Epay webhook POST form parsing failed path=%q client_ip=%s error=%q", c.Request.RequestURI, c.ClientIP(), err.Error()))
 			_, _ = c.Writer.Write([]byte("fail"))
 			return
 		}
@@ -366,44 +366,44 @@ func EpayNotify(c *gin.Context) {
 			return r
 		}, map[string]string{})
 	} else {
-		// GET 请求：从 URL Query 解析参数
+		// GET request：从 URL Query 解析parameter
 		params = lo.Reduce(lo.Keys(c.Request.URL.Query()), func(r map[string]string, t string, i int) map[string]string {
 			r[t] = c.Request.URL.Query().Get(t)
 			return r
 		}, map[string]string{})
 	}
-	logger.LogInfo(c.Request.Context(), fmt.Sprintf("易支付 webhook 收到请求 path=%q client_ip=%s method=%s params=%q", c.Request.RequestURI, c.ClientIP(), c.Request.Method, common.GetJsonString(params)))
+	logger.LogInfo(c.Request.Context(), fmt.Sprintf("Epay webhook request received path=%q client_ip=%s method=%s params=%q", c.Request.RequestURI, c.ClientIP(), c.Request.Method, common.GetJsonString(params)))
 
 	if len(params) == 0 {
-		logger.LogWarn(c.Request.Context(), fmt.Sprintf("易支付 webhook 参数为空 path=%q client_ip=%s", c.Request.RequestURI, c.ClientIP()))
+		logger.LogWarn(c.Request.Context(), fmt.Sprintf("Epay webhook parameters empty path=%q client_ip=%s", c.Request.RequestURI, c.ClientIP()))
 		_, _ = c.Writer.Write([]byte("fail"))
 		return
 	}
 	client := GetEpayClient()
 	if client == nil {
-		logger.LogError(c.Request.Context(), fmt.Sprintf("易支付 client 未初始化 path=%q client_ip=%s", c.Request.RequestURI, c.ClientIP()))
+		logger.LogError(c.Request.Context(), fmt.Sprintf("Epay client not initialized path=%q client_ip=%s", c.Request.RequestURI, c.ClientIP()))
 		_, err := c.Writer.Write([]byte("fail"))
 		if err != nil {
-			logger.LogError(c.Request.Context(), fmt.Sprintf("易支付 webhook 响应写入失败 path=%q client_ip=%s error=%q", c.Request.RequestURI, c.ClientIP(), err.Error()))
+			logger.LogError(c.Request.Context(), fmt.Sprintf("Epay webhook response write failed path=%q client_ip=%s error=%q", c.Request.RequestURI, c.ClientIP(), err.Error()))
 		}
 		return
 	}
 	verifyInfo, err := client.Verify(params)
 	if err == nil && verifyInfo.VerifyStatus {
-		logger.LogInfo(c.Request.Context(), fmt.Sprintf("易支付 webhook 验签成功 trade_no=%s callback_type=%s trade_status=%s client_ip=%s verify_info=%q", verifyInfo.ServiceTradeNo, verifyInfo.Type, verifyInfo.TradeStatus, c.ClientIP(), common.GetJsonString(verifyInfo)))
+		logger.LogInfo(c.Request.Context(), fmt.Sprintf("Epay webhook signature verified trade_no=%s callback_type=%s trade_status=%s client_ip=%s verify_info=%q", verifyInfo.ServiceTradeNo, verifyInfo.Type, verifyInfo.TradeStatus, c.ClientIP(), common.GetJsonString(verifyInfo)))
 		_, err := c.Writer.Write([]byte("success"))
 		if err != nil {
-			logger.LogError(c.Request.Context(), fmt.Sprintf("易支付 webhook 响应写入失败 trade_no=%s client_ip=%s error=%q", verifyInfo.ServiceTradeNo, c.ClientIP(), err.Error()))
+			logger.LogError(c.Request.Context(), fmt.Sprintf("Epay webhook response write failed trade_no=%s client_ip=%s error=%q", verifyInfo.ServiceTradeNo, c.ClientIP(), err.Error()))
 		}
 	} else {
 		_, err := c.Writer.Write([]byte("fail"))
 		if err != nil {
-			logger.LogError(c.Request.Context(), fmt.Sprintf("易支付 webhook 响应写入失败 path=%q client_ip=%s error=%q", c.Request.RequestURI, c.ClientIP(), err.Error()))
+			logger.LogError(c.Request.Context(), fmt.Sprintf("Epay webhook response write failed path=%q client_ip=%s error=%q", c.Request.RequestURI, c.ClientIP(), err.Error()))
 		}
 		if err != nil {
-			logger.LogWarn(c.Request.Context(), fmt.Sprintf("易支付 webhook 验签失败 path=%q client_ip=%s verify_error=%q", c.Request.RequestURI, c.ClientIP(), err.Error()))
+			logger.LogWarn(c.Request.Context(), fmt.Sprintf("Epay webhook signature verification failed path=%q client_ip=%s verify_error=%q", c.Request.RequestURI, c.ClientIP(), err.Error()))
 		} else {
-			logger.LogWarn(c.Request.Context(), fmt.Sprintf("易支付 webhook 验签失败 path=%q client_ip=%s verify_status=false", c.Request.RequestURI, c.ClientIP()))
+			logger.LogWarn(c.Request.Context(), fmt.Sprintf("Epay webhook signature verification failed path=%q client_ip=%s verify_status=false", c.Request.RequestURI, c.ClientIP()))
 		}
 		return
 	}
@@ -413,22 +413,22 @@ func EpayNotify(c *gin.Context) {
 		defer UnlockOrder(verifyInfo.ServiceTradeNo)
 		topUp := model.GetTopUpByTradeNo(verifyInfo.ServiceTradeNo)
 		if topUp == nil {
-			logger.LogWarn(c.Request.Context(), fmt.Sprintf("易支付 回调订单不存在 trade_no=%s callback_type=%s client_ip=%s verify_info=%q", verifyInfo.ServiceTradeNo, verifyInfo.Type, c.ClientIP(), common.GetJsonString(verifyInfo)))
+			logger.LogWarn(c.Request.Context(), fmt.Sprintf("Epay callback order not found trade_no=%s callback_type=%s client_ip=%s verify_info=%q", verifyInfo.ServiceTradeNo, verifyInfo.Type, c.ClientIP(), common.GetJsonString(verifyInfo)))
 			return
 		}
 		if topUp.PaymentProvider != model.PaymentProviderEpay {
-			logger.LogWarn(c.Request.Context(), fmt.Sprintf("易支付 订单支付网关不匹配 trade_no=%s order_provider=%s callback_type=%s client_ip=%s", verifyInfo.ServiceTradeNo, topUp.PaymentProvider, verifyInfo.Type, c.ClientIP()))
+			logger.LogWarn(c.Request.Context(), fmt.Sprintf("Epay Order paid gateway mismatch trade_no=%s order_provider=%s callback_type=%s client_ip=%s", verifyInfo.ServiceTradeNo, topUp.PaymentProvider, verifyInfo.Type, c.ClientIP()))
 			return
 		}
 		if topUp.Status == common.TopUpStatusPending {
 			if topUp.PaymentMethod != verifyInfo.Type {
-				logger.LogInfo(c.Request.Context(), fmt.Sprintf("易支付 实际支付方式与订单不同 trade_no=%s order_payment_method=%s actual_type=%s client_ip=%s", verifyInfo.ServiceTradeNo, topUp.PaymentMethod, verifyInfo.Type, c.ClientIP()))
+				logger.LogInfo(c.Request.Context(), fmt.Sprintf("Epay Actual payment method differs from order trade_no=%s order_payment_method=%s actual_type=%s client_ip=%s", verifyInfo.ServiceTradeNo, topUp.PaymentMethod, verifyInfo.Type, c.ClientIP()))
 				topUp.PaymentMethod = verifyInfo.Type
 			}
 			topUp.Status = common.TopUpStatusSuccess
 			err := topUp.Update()
 			if err != nil {
-				logger.LogError(c.Request.Context(), fmt.Sprintf("易支付 更新充值订单失败 trade_no=%s user_id=%d client_ip=%s error=%q topup=%q", topUp.TradeNo, topUp.UserId, c.ClientIP(), err.Error(), common.GetJsonString(topUp)))
+				logger.LogError(c.Request.Context(), fmt.Sprintf("Epay Failed to update top-up order trade_no=%s user_id=%d client_ip=%s error=%q topup=%q", topUp.TradeNo, topUp.UserId, c.ClientIP(), err.Error(), common.GetJsonString(topUp)))
 				return
 			}
 			//user, _ := model.GetUserById(topUp.UserId, false)
@@ -438,14 +438,14 @@ func EpayNotify(c *gin.Context) {
 			quotaToAdd := int(dAmount.Mul(dQuotaPerUnit).IntPart())
 			err = model.IncreaseUserQuota(topUp.UserId, quotaToAdd, true)
 			if err != nil {
-				logger.LogError(c.Request.Context(), fmt.Sprintf("易支付 更新用户额度失败 trade_no=%s user_id=%d client_ip=%s quota_to_add=%d error=%q topup=%q", topUp.TradeNo, topUp.UserId, c.ClientIP(), quotaToAdd, err.Error(), common.GetJsonString(topUp)))
+				logger.LogError(c.Request.Context(), fmt.Sprintf("Epay Failed to update user quota trade_no=%s user_id=%d client_ip=%s quota_to_add=%d error=%q topup=%q", topUp.TradeNo, topUp.UserId, c.ClientIP(), quotaToAdd, err.Error(), common.GetJsonString(topUp)))
 				return
 			}
-			logger.LogInfo(c.Request.Context(), fmt.Sprintf("易支付 充值成功 trade_no=%s user_id=%d client_ip=%s quota_to_add=%d money=%.2f topup=%q", topUp.TradeNo, topUp.UserId, c.ClientIP(), quotaToAdd, topUp.Money, common.GetJsonString(topUp)))
+			logger.LogInfo(c.Request.Context(), fmt.Sprintf("Epay Top-up successful trade_no=%s user_id=%d client_ip=%s quota_to_add=%d money=%.2f topup=%q", topUp.TradeNo, topUp.UserId, c.ClientIP(), quotaToAdd, topUp.Money, common.GetJsonString(topUp)))
 			model.RecordTopupLog(topUp.UserId, fmt.Sprintf("Online top-up successful, amount: %v, payment: %f", logger.LogQuota(quotaToAdd), topUp.Money), c.ClientIP(), topUp.PaymentMethod, "epay")
 		}
 	} else {
-		logger.LogInfo(c.Request.Context(), fmt.Sprintf("易支付 webhook 忽略事件 trade_no=%s callback_type=%s trade_status=%s client_ip=%s verify_info=%q", verifyInfo.ServiceTradeNo, verifyInfo.Type, verifyInfo.TradeStatus, c.ClientIP(), common.GetJsonString(verifyInfo)))
+		logger.LogInfo(c.Request.Context(), fmt.Sprintf("Epay webhook event ignored trade_no=%s callback_type=%s trade_status=%s client_ip=%s verify_info=%q", verifyInfo.ServiceTradeNo, verifyInfo.Type, verifyInfo.TradeStatus, c.ClientIP(), common.GetJsonString(verifyInfo)))
 	}
 }
 
@@ -500,7 +500,7 @@ func GetUserTopUps(c *gin.Context) {
 	common.ApiSuccess(c, pageInfo)
 }
 
-// GetAllTopUps 管理员获取全平台充值记录
+// GetAllTopUps 管理员获取全平台Top-up recorded
 func GetAllTopUps(c *gin.Context) {
 	pageInfo := common.GetPageQuery(c)
 	keyword := c.Query("keyword")
@@ -537,7 +537,7 @@ func AdminCompleteTopUp(c *gin.Context) {
 		return
 	}
 
-	// 订单级互斥，防止并发补单
+	// order级互斥，防止并发补单
 	LockOrder(req.TradeNo)
 	defer UnlockOrder(req.TradeNo)
 

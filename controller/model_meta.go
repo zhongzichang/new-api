@@ -13,7 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetAllModelsMeta 获取模型列表（分页）
+// GetAllModelsMeta 获取Model列表（分页）
 func GetAllModelsMeta(c *gin.Context) {
 
 	pageInfo := common.GetPageQuery(c)
@@ -41,7 +41,7 @@ func GetAllModelsMeta(c *gin.Context) {
 	})
 }
 
-// SearchModelsMeta 搜索模型列表
+// SearchModelsMeta 搜索Model列表
 func SearchModelsMeta(c *gin.Context) {
 
 	keyword := c.Query("keyword")
@@ -60,7 +60,7 @@ func SearchModelsMeta(c *gin.Context) {
 	common.ApiSuccess(c, pageInfo)
 }
 
-// GetModelMeta 根据 ID 获取单条模型信息
+// GetModelMeta 根据 ID 获取单条Modelinfo
 func GetModelMeta(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -77,7 +77,7 @@ func GetModelMeta(c *gin.Context) {
 	common.ApiSuccess(c, &m)
 }
 
-// CreateModelMeta 新建模型
+// CreateModelMeta 新建Model
 func CreateModelMeta(c *gin.Context) {
 	var m model.Model
 	if err := c.ShouldBindJSON(&m); err != nil {
@@ -85,7 +85,7 @@ func CreateModelMeta(c *gin.Context) {
 		return
 	}
 	if m.ModelName == "" {
-		common.ApiErrorMsg(c, "模型名称不能为空")
+		common.ApiErrorMsg(c, "Model名称不能为空")
 		return
 	}
 	// 名称冲突检查
@@ -93,7 +93,7 @@ func CreateModelMeta(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	} else if dup {
-		common.ApiErrorMsg(c, "模型名称已存在")
+		common.ApiErrorMsg(c, "Model名称已存在")
 		return
 	}
 
@@ -105,7 +105,7 @@ func CreateModelMeta(c *gin.Context) {
 	common.ApiSuccess(c, &m)
 }
 
-// UpdateModelMeta 更新模型
+// UpdateModelMeta 更新Model
 func UpdateModelMeta(c *gin.Context) {
 	statusOnly := c.Query("status_only") == "true"
 
@@ -115,12 +115,12 @@ func UpdateModelMeta(c *gin.Context) {
 		return
 	}
 	if m.Id == 0 {
-		common.ApiErrorMsg(c, "缺少模型 ID")
+		common.ApiErrorMsg(c, "缺少Model ID")
 		return
 	}
 
 	if statusOnly {
-		// 只更新状态，防止误清空其他字段
+		// 只更新status，防止误清空其他字段
 		if err := model.DB.Model(&model.Model{}).Where("id = ?", m.Id).Update("status", m.Status).Error; err != nil {
 			common.ApiError(c, err)
 			return
@@ -131,7 +131,7 @@ func UpdateModelMeta(c *gin.Context) {
 			common.ApiError(c, err)
 			return
 		} else if dup {
-			common.ApiErrorMsg(c, "模型名称已存在")
+			common.ApiErrorMsg(c, "Model名称已存在")
 			return
 		}
 
@@ -144,7 +144,7 @@ func UpdateModelMeta(c *gin.Context) {
 	common.ApiSuccess(c, &m)
 }
 
-// DeleteModelMeta 删除模型
+// DeleteModelMeta 删除Model
 func DeleteModelMeta(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -160,7 +160,7 @@ func DeleteModelMeta(c *gin.Context) {
 	common.ApiSuccess(c, nil)
 }
 
-// enrichModels 批量填充附加信息：端点、渠道、分组、计费类型，避免 N+1 查询
+// enrichModels 批量填充附加info：端点、channel、分组、计费类型，避免 N+1 查询
 func enrichModels(models []*model.Model) {
 	if len(models) == 0 {
 		return
@@ -182,10 +182,10 @@ func enrichModels(models []*model.Model) {
 		}
 	}
 
-	// 2) 批量查询精确模型的绑定渠道
+	// 2) 批量查询精确Model的绑定channel
 	channelsByModel, _ := model.GetBoundChannelsByModelsMap(exactNames)
 
-	// 3) 精确模型：端点从缓存、渠道批量映射、分组/计费类型从缓存
+	// 3) 精确Model：端点从缓存、channel批量映射、分组/计费类型从缓存
 	for name, indices := range exactIdx {
 		chs := channelsByModel[name]
 		for _, idx := range indices {
@@ -206,10 +206,10 @@ func enrichModels(models []*model.Model) {
 		return
 	}
 
-	// 4) 一次性读取定价缓存，内存匹配所有规则模型
+	// 4) 一次性读取定价缓存，内存匹配所有规则Model
 	pricings := model.GetPricing()
 
-	// 为全部规则模型收集匹配名集合、端点并集、分组并集、配额集合
+	// 为全部规则Model收集匹配名集合、端点并集、分组并集、配额集合
 	matchedNamesByIdx := make(map[int][]string)
 	endpointSetByIdx := make(map[int]map[constant.EndpointType]struct{})
 	groupSetByIdx := make(map[int]map[string]struct{})
@@ -259,7 +259,7 @@ func enrichModels(models []*model.Model) {
 		}
 	}
 
-	// 5) 汇总所有匹配到的模型名称，批量查询一次渠道
+	// 5) 汇总所有匹配到的Model名称，批量查询一次channel
 	allMatchedSet := make(map[string]struct{})
 	for _, names := range matchedNamesByIdx {
 		for _, n := range names {
@@ -272,7 +272,7 @@ func enrichModels(models []*model.Model) {
 	}
 	matchedChannelsByModel, _ := model.GetBoundChannelsByModelsMap(allMatched)
 
-	// 6) 回填每个规则模型的并集信息
+	// 6) 回填每个规则Model的并集info
 	for _, idx := range ruleIndices {
 		mm := models[idx]
 
@@ -306,7 +306,7 @@ func enrichModels(models []*model.Model) {
 			mm.QuotaTypes = arr
 		}
 
-		// 渠道并集
+		// channel并集
 		names := matchedNamesByIdx[idx]
 		channelSet := make(map[string]model.BoundChannel)
 		for _, n := range names {
@@ -323,7 +323,7 @@ func enrichModels(models []*model.Model) {
 			mm.BoundChannels = chs
 		}
 
-		// 匹配信息
+		// 匹配info
 		mm.MatchedModels = names
 		mm.MatchedCount = len(names)
 	}

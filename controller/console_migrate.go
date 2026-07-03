@@ -12,13 +12,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// MigrateConsoleSetting 迁移旧的控制台相关配置到 console_setting.*
+// MigrateConsoleSetting 迁移旧的控制台相关configuration到 console_setting.*
 func MigrateConsoleSetting(c *gin.Context) {
 	// 读取全部 option
 	opts, err := model.AllOption()
 	if err != nil {
 		common.SysError("failed to get all options: " + err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "获取配置失败，请稍后重试"})
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "获取configurationfailed，请稍后重试"})
 		return
 	}
 	// 建立 map
@@ -27,7 +27,7 @@ func MigrateConsoleSetting(c *gin.Context) {
 		valMap[o.Key] = o.Value
 	}
 
-	// 处理 APIInfo
+	// processing APIInfo
 	if v := valMap["ApiInfo"]; v != "" {
 		var arr []map[string]interface{}
 		if err := json.Unmarshal([]byte(v), &arr); err == nil {

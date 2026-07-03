@@ -68,12 +68,12 @@ func getPriority(group string, model string, retry int) (int, error) {
 		Pluck("priority", &priorities).Error // Pluck用于将查询的结果直接扫描到一个切片中
 
 	if err != nil {
-		// 处理错误
+		// processingerror
 		return 0, err
 	}
 
 	if len(priorities) == 0 {
-		// 如果没有查询到优先级，则返回错误
+		// 如果没有查询到优先级，则返回error
 		return 0, errors.New("数据库一致性被破坏")
 	}
 

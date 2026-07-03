@@ -125,16 +125,16 @@ func testChannel(channel *model.Channel, testUserID int, testModel string, endpo
 			requestPath = "/v1/rerank"
 		}
 
-		// 先判断是否为 Embedding 模型
+		// 先判断是否为 Embedding Model
 		if strings.Contains(strings.ToLower(testModel), "embedding") ||
-			strings.HasPrefix(testModel, "m3e") || // m3e 系列模型
-			strings.Contains(testModel, "bge-") || // bge 系列模型
+			strings.HasPrefix(testModel, "m3e") || // m3e 系列Model
+			strings.Contains(testModel, "bge-") || // bge 系列Model
 			strings.Contains(testModel, "embed") ||
-			channel.Type == constant.ChannelTypeMokaAI { // 其他 embedding 模型
-			requestPath = "/v1/embeddings" // 修改请求路径
+			channel.Type == constant.ChannelTypeMokaAI { // 其他 embedding Model
+			requestPath = "/v1/embeddings" // 修改request路径
 		}
 
-		// VolcEngine 图像生成模型
+		// VolcEngine 图像生成Model
 		if channel.Type == constant.ChannelTypeVolcEngine && strings.Contains(testModel, "seedream") {
 			requestPath = "/v1/images/generations"
 		}
@@ -189,7 +189,7 @@ func testChannel(channel *model.Channel, testUserID int, testModel string, endpo
 	// Determine relay format based on endpoint type or request path
 	var relayFormat types.RelayFormat
 	if endpointType != "" {
-		// 根据指定的端点类型设置 relayFormat
+		// 根据指定的端点类型settings relayFormat
 		switch constant.EndpointType(endpointType) {
 		case constant.EndpointTypeOpenAI:
 			relayFormat = types.RelayFormatOpenAI
@@ -211,7 +211,7 @@ func testChannel(channel *model.Channel, testUserID int, testModel string, endpo
 			relayFormat = types.RelayFormatOpenAI
 		}
 	} else {
-		// 根据请求路径自动检测
+		// 根据request路径自动检测
 		relayFormat = types.RelayFormatOpenAI
 		if c.Request.URL.Path == "/v1/embeddings" {
 			relayFormat = types.RelayFormatEmbedding
@@ -270,7 +270,7 @@ func testChannel(channel *model.Channel, testUserID int, testModel string, endpo
 	}
 
 	testModel = info.UpstreamModelName
-	// 更新请求中的模型名称
+	// 更新request中的Model名称
 	request.SetModelName(testModel)
 
 	apiType, _ := common.ChannelType2APIType(channel.Type)
@@ -312,7 +312,7 @@ func testChannel(channel *model.Channel, testUserID int, testModel string, endpo
 	// 根据 RelayMode 选择正确的转换函数
 	switch info.RelayMode {
 	case relayconstant.RelayModeEmbeddings:
-		// Embedding 请求 - request 已经是正确的类型
+		// Embedding request - request 已经是正确的类型
 		if embeddingReq, ok := request.(*dto.EmbeddingRequest); ok {
 			convertedRequest, err = adaptor.ConvertEmbeddingRequest(c, info, *embeddingReq)
 		} else {
@@ -323,7 +323,7 @@ func testChannel(channel *model.Channel, testUserID int, testModel string, endpo
 			}
 		}
 	case relayconstant.RelayModeImagesGenerations:
-		// 图像生成请求 - request 已经是正确的类型
+		// 图像生成request - request 已经是正确的类型
 		if imageReq, ok := request.(*dto.ImageRequest); ok {
 			convertedRequest, err = adaptor.ConvertImageRequest(c, info, *imageReq)
 		} else {
@@ -334,7 +334,7 @@ func testChannel(channel *model.Channel, testUserID int, testModel string, endpo
 			}
 		}
 	case relayconstant.RelayModeRerank:
-		// Rerank 请求 - request 已经是正确的类型
+		// Rerank request - request 已经是正确的类型
 		if rerankReq, ok := request.(*dto.RerankRequest); ok {
 			convertedRequest, err = adaptor.ConvertRerankRequest(c, info.RelayMode, *rerankReq)
 		} else {
@@ -345,7 +345,7 @@ func testChannel(channel *model.Channel, testUserID int, testModel string, endpo
 			}
 		}
 	case relayconstant.RelayModeResponses:
-		// Response 请求 - request 已经是正确的类型
+		// Response request - request 已经是正确的类型
 		if responseReq, ok := request.(*dto.OpenAIResponsesRequest); ok {
 			convertedRequest, err = adaptor.ConvertOpenAIResponsesRequest(c, info, *responseReq)
 		} else {
@@ -375,7 +375,7 @@ func testChannel(channel *model.Channel, testUserID int, testModel string, endpo
 			}
 		}
 	default:
-		// Chat/Completion 等其他请求类型
+		// Chat/Completion 等其他request类型
 		if generalReq, ok := request.(*dto.GeneralOpenAIRequest); ok {
 			convertedRequest, err = adaptor.ConvertOpenAIRequest(c, info, generalReq)
 		} else {
@@ -506,9 +506,9 @@ func testChannel(channel *model.Channel, testUserID int, testModel string, endpo
 		PromptTokens:     usage.PromptTokens,
 		CompletionTokens: usage.CompletionTokens,
 		ModelName:        info.OriginModelName,
-		TokenName:        "模型测试",
+		TokenName:        "Model测试",
 		Quota:            quota,
-		Content:          "模型测试",
+		Content:          "Model测试",
 		UseTimeSeconds:   int(consumedTime),
 		IsStream:         info.IsStream,
 		Group:            info.UsingGroup,
@@ -699,7 +699,7 @@ func detectErrorMessageFromJSONBytes(jsonBytes []byte) string {
 func buildTestRequest(model string, endpointType string, channel *model.Channel, isStream bool) dto.Request {
 	testResponsesInput := json.RawMessage(`[{"role":"user","content":"hi"}]`)
 
-	// 根据端点类型构建不同的测试请求
+	// 根据端点类型构建不同的测试request
 	if endpointType != "" {
 		switch constant.EndpointType(endpointType) {
 		case constant.EndpointTypeEmbeddings:
@@ -771,7 +771,7 @@ func buildTestRequest(model string, endpointType string, channel *model.Channel,
 		}
 	}
 
-	// 先判断是否为 Embedding 模型
+	// 先判断是否为 Embedding Model
 	if strings.Contains(strings.ToLower(model), "embedding") ||
 		strings.HasPrefix(model, "m3e") ||
 		strings.Contains(model, "bge-") {
@@ -799,7 +799,7 @@ func buildTestRequest(model string, endpointType string, channel *model.Channel,
 		}
 	}
 
-	// Chat/Completion 请求 - 返回 GeneralOpenAIRequest
+	// Chat/Completion request - 返回 GeneralOpenAIRequest
 	testRequest := &dto.GeneralOpenAIRequest{
 		Model:  model,
 		Stream: lo.ToPtr(isStream),
@@ -915,7 +915,7 @@ func testAllChannels(notify bool) error {
 		disableThreshold = 10000000 // a impossible value
 	}
 	gopool.Go(func() {
-		// 使用 defer 确保无论如何都会重置运行状态，防止死锁
+		// 使用 defer 确保无论如何都会重置运行status，防止死锁
 		defer func() {
 			testAllChannelsLock.Lock()
 			testAllChannelsRunning = false
@@ -939,10 +939,10 @@ func testAllChannels(notify bool) error {
 				shouldBanChannel = service.ShouldDisableChannel(result.newAPIError)
 			}
 
-			// 当错误检查通过，才检查响应时间
+			// 当error检查通过，才检查response时间
 			if common.AutomaticDisableChannelEnabled && !shouldBanChannel {
 				if milliseconds > disableThreshold {
-					err := fmt.Errorf("响应时间 %.2fs 超过阈值 %.2fs", float64(milliseconds)/1000.0, float64(disableThreshold)/1000.0)
+					err := fmt.Errorf("response时间 %.2fs 超过阈值 %.2fs", float64(milliseconds)/1000.0, float64(disableThreshold)/1000.0)
 					newAPIError = types.NewOpenAIError(err, types.ErrorCodeChannelResponseTimeExceeded, http.StatusRequestTimeout)
 					shouldBanChannel = true
 				}
@@ -963,7 +963,7 @@ func testAllChannels(notify bool) error {
 		}
 
 		if notify {
-			service.NotifyRootUser(dto.NotifyTypeChannelTest, "通道测试完成", "所有通道测试已完成")
+			service.NotifyRootUser(dto.NotifyTypeChannelTest, "通道测试completed", "所有通道测试completed")
 		}
 	})
 	return nil
@@ -984,7 +984,7 @@ func TestAllChannels(c *gin.Context) {
 var autoTestChannelsOnce sync.Once
 
 func AutomaticallyTestChannels() {
-	// 只在Master节点定时测试渠道
+	// 只在Master节点定时测试channel
 	if !common.IsMasterNode {
 		return
 	}

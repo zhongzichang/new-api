@@ -13,29 +13,29 @@ import (
 // @Tags Video
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "用户认证令牌 (Aeess-Token: sk-xxxx)"
-// @Param request body dto.VideoRequest true "视频生成请求参数"
-// @Failure 400 {object} dto.OpenAIError "请求参数错误"
+// @Param Authorization header string true "user认证token (Aeess-Token: sk-xxxx)"
+// @Param request body dto.VideoRequest true "视频生成requestparameter"
+// @Failure 400 {object} dto.OpenAIError "requestInvalid parameters"
 // @Failure 401 {object} dto.OpenAIError "未授权"
 // @Failure 403 {object} dto.OpenAIError "无权限"
-// @Failure 500 {object} dto.OpenAIError "服务器内部错误"
+// @Failure 500 {object} dto.OpenAIError "服务器内部error"
 // @Router /v1/video/generations [post]
 func VideoGenerations(c *gin.Context) {
 }
 
 // VideoGenerationsTaskId
 // @Summary 查询视频
-// @Description 根据任务ID查询视频生成任务的状态和结果
+// @Description 根据任务ID查询视频生成任务的status和结果
 // @Tags Video
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param task_id path string true "Task ID"
-// @Success 200 {object} dto.VideoTaskResponse "任务状态和结果"
-// @Failure 400 {object} dto.OpenAIError "请求参数错误"
+// @Success 200 {object} dto.VideoTaskResponse "任务status和结果"
+// @Failure 400 {object} dto.OpenAIError "requestInvalid parameters"
 // @Failure 401 {object} dto.OpenAIError "未授权"
 // @Failure 403 {object} dto.OpenAIError "无权限"
-// @Failure 500 {object} dto.OpenAIError "服务器内部错误"
+// @Failure 500 {object} dto.OpenAIError "服务器内部error"
 // @Router /v1/video/generations/{task_id} [get]
 func VideoGenerationsTaskId(c *gin.Context) {
 }
@@ -46,13 +46,13 @@ func VideoGenerationsTaskId(c *gin.Context) {
 // @Tags Video
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "用户认证令牌 (Aeess-Token: sk-xxxx)"
-// @Param request body KlingText2VideoRequest true "视频生成请求参数"
-// @Success 200 {object} dto.VideoTaskResponse "任务状态和结果"
-// @Failure 400 {object} dto.OpenAIError "请求参数错误"
+// @Param Authorization header string true "user认证token (Aeess-Token: sk-xxxx)"
+// @Param request body KlingText2VideoRequest true "视频生成requestparameter"
+// @Success 200 {object} dto.VideoTaskResponse "任务status和结果"
+// @Failure 400 {object} dto.OpenAIError "requestInvalid parameters"
 // @Failure 401 {object} dto.OpenAIError "未授权"
 // @Failure 403 {object} dto.OpenAIError "无权限"
-// @Failure 500 {object} dto.OpenAIError "服务器内部错误"
+// @Failure 500 {object} dto.OpenAIError "服务器内部error"
 // @Router /kling/v1/videos/text2video [post]
 func KlingText2VideoGenerations(c *gin.Context) {
 }
@@ -90,13 +90,13 @@ type KlingCameraConfig struct {
 // @Tags Video
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "用户认证令牌 (Aeess-Token: sk-xxxx)"
-// @Param request body KlingImage2VideoRequest true "图生视频请求参数"
-// @Success 200 {object} dto.VideoTaskResponse "任务状态和结果"
-// @Failure 400 {object} dto.OpenAIError "请求参数错误"
+// @Param Authorization header string true "user认证token (Aeess-Token: sk-xxxx)"
+// @Param request body KlingImage2VideoRequest true "图生视频requestparameter"
+// @Success 200 {object} dto.VideoTaskResponse "任务status和结果"
+// @Failure 400 {object} dto.OpenAIError "requestInvalid parameters"
 // @Failure 401 {object} dto.OpenAIError "未授权"
 // @Failure 403 {object} dto.OpenAIError "无权限"
-// @Failure 500 {object} dto.OpenAIError "服务器内部错误"
+// @Failure 500 {object} dto.OpenAIError "服务器内部error"
 // @Router /kling/v1/videos/image2video [post]
 func KlingImage2VideoGenerations(c *gin.Context) {
 }

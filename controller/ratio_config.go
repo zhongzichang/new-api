@@ -12,7 +12,7 @@ func GetRatioConfig(c *gin.Context) {
 	if !ratio_setting.IsExposeRatioEnabled() {
 		c.JSON(http.StatusForbidden, gin.H{
 			"success": false,
-			"message": "倍率配置接口未启用",
+			"message": "倍率configuration接口未enabled",
 		})
 		return
 	}
