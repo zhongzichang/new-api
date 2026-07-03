@@ -450,6 +450,8 @@ func verifyUsdtTransferOnTron(apiURL, contractAddress, receiver, txHash string, 
 		return 0, 0, errors.New("交易哈希为空")
 	}
 
+	tronApiKey := strings.TrimSpace(setting.TronGridApiKey)
+
 	// 1. Verify transaction info
 	infoURL := fmt.Sprintf("%s/wallet/gettransactioninfobyid", strings.TrimRight(apiURL, "/"))
 	infoBody := fmt.Sprintf(`{"value":"%s"}`, txHash)
@@ -459,6 +461,9 @@ func verifyUsdtTransferOnTron(apiURL, contractAddress, receiver, txHash string, 
 	}
 	infoReq.Header.Set("Content-Type", "application/json")
 	infoReq.Header.Set("Accept", "application/json")
+	if tronApiKey != "" {
+		infoReq.Header.Set("TRON-PRO-API-KEY", tronApiKey)
+	}
 	infoResp, err := http.DefaultClient.Do(infoReq)
 	if err != nil {
 		return 0, 0, fmt.Errorf("查询交易信息失败: %w", err)
@@ -541,6 +546,9 @@ func verifyUsdtTransferOnTron(apiURL, contractAddress, receiver, txHash string, 
 		return 0, 0, fmt.Errorf("构建当前区块请求失败: %w", err)
 	}
 	nowReq.Header.Set("Accept", "application/json")
+	if tronApiKey != "" {
+		nowReq.Header.Set("TRON-PRO-API-KEY", tronApiKey)
+	}
 	nowResp, err := http.DefaultClient.Do(nowReq)
 	if err != nil {
 		return 0, 0, fmt.Errorf("查询当前区块失败: %w", err)

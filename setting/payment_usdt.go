@@ -7,6 +7,7 @@ var (
 	UsdtBaseRpcUrl       string
 	UsdtPolygonRpcUrl    string
 	UsdtTronRpcUrl       string
+	TronGridApiKey       string
 	UsdtEthContract      string = "0xdAC17F958D2ee523a2206206994597C13D831ec7"
 	UsdtBscContract      string = "0x55d398326f99059fF775485246999027B3197955"
 	UsdtBaseContract     string = "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2"

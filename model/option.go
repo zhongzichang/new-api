@@ -158,6 +158,7 @@ func InitOptionMap() {
 	common.OptionMap["UsdtBaseRpcUrl"] = setting.UsdtBaseRpcUrl
 	common.OptionMap["UsdtPolygonRpcUrl"] = setting.UsdtPolygonRpcUrl
 	common.OptionMap["UsdtTronRpcUrl"] = setting.UsdtTronRpcUrl
+	common.OptionMap["TronGridApiKey"] = setting.TronGridApiKey
 	common.OptionMap["UsdtEthContract"] = setting.UsdtEthContract
 	common.OptionMap["UsdtBscContract"] = setting.UsdtBscContract
 	common.OptionMap["UsdtBaseContract"] = setting.UsdtBaseContract
@@ -621,6 +622,8 @@ func updateOptionMap(key string, value string) (err error) {
 		setting.UsdtPolygonRpcUrl = value
 	case "UsdtTronRpcUrl":
 		setting.UsdtTronRpcUrl = value
+	case "TronGridApiKey":
+		setting.TronGridApiKey = value
 	case "UsdtEthContract":
 		setting.UsdtEthContract = value
 	case "UsdtBscContract":
