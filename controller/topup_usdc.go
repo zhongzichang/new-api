@@ -408,8 +408,11 @@ func VerifyUsdcTransaction(c *gin.Context) {
 
 	if confirmations < requiredConfirmations {
 		c.JSON(http.StatusOK, gin.H{
-			"message": "error",
-			"data":  fmt.Sprintf("Waiting for more block confirmations, current %d/%d", confirmations, requiredConfirmations),
+			"message":         "error",
+			"code":            "PENDING_CONFIRMATIONS",
+			"confirmations":   confirmations,
+			"required":        requiredConfirmations,
+			"data":            fmt.Sprintf("Waiting for more block confirmations, current %d/%d", confirmations, requiredConfirmations),
 		})
 		return
 	}
@@ -421,7 +424,13 @@ func VerifyUsdcTransaction(c *gin.Context) {
 	maxAccepted := expectedAmount.Add(tolerance)
 
 	if actualAmount.LessThan(minAccepted) {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("Insufficient amount received, expected %.6f, actual %.6f", topUp.Money, amount)})
+		c.JSON(http.StatusOK, gin.H{
+			"message": "error",
+			"code":    "INSUFFICIENT_AMOUNT",
+			"expected": topUp.Money,
+			"actual":   amount,
+			"data":    fmt.Sprintf("Insufficient amount received, expected %.6f, actual %.6f", topUp.Money, amount),
+		})
 		return
 	}
 	if actualAmount.GreaterThan(maxAccepted) {
