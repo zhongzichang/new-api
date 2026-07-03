@@ -57,29 +57,29 @@ type UsdcTxHashRequest struct {
 func UpdateUsdcTxHash(c *gin.Context) {
 	var req UsdcTxHashRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.TradeNo == "" || req.TxHash == "" {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "参数错误"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Invalid parameters"})
 		return
 	}
 
 	topUp := model.GetTopUpByTradeNo(req.TradeNo)
 	if topUp == nil {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值订单不存在"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Top-up order not found"})
 		return
 	}
 
 	userId := c.GetInt("id")
 	if topUp.UserId != userId {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "无权操作该订单"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "No permission to operate this order"})
 		return
 	}
 
 	if topUp.Status != common.TopUpStatusPending {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值订单状态错误"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Invalid order status"})
 		return
 	}
 
 	if topUp.PaymentProvider != model.PaymentProviderUsdcEth && topUp.PaymentProvider != model.PaymentProviderUsdcBsc && topUp.PaymentProvider != model.PaymentProviderUsdcBase && topUp.PaymentProvider != model.PaymentProviderUsdcPolygon && topUp.PaymentProvider != model.PaymentProviderUsdcTron {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "非 USDC 充值订单"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Not a USDC top-up order"})
 		return
 	}
 
@@ -91,11 +91,11 @@ func UpdateUsdcTxHash(c *gin.Context) {
 	topUp.TxHash = txHash
 	if err := topUp.Update(); err != nil {
 		logger.LogError(c.Request.Context(), fmt.Sprintf("USDC 更新交易哈希失败 trade_no=%s tx=%s error=%q", req.TradeNo, txHash, err.Error()))
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "更新交易哈希失败"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Failed to update transaction hash"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "success", "data": "更新成功"})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "success", "data": "Updated successfully"})
 }
 func isUsdcTopUpEnabled() bool {
 	if !isPaymentComplianceConfirmed() {
@@ -179,25 +179,25 @@ func getUsdcPayMoney(amount int64, group string) float64 {
 func RequestUsdcAmount(c *gin.Context) {
 	var req UsdcPayRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "参数错误"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Invalid parameters"})
 		return
 	}
 
 	if req.Amount < int64(setting.UsdcMinTopUp) {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能小于 %d", setting.UsdcMinTopUp)})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("Top-up amount cannot be less than %d", setting.UsdcMinTopUp)})
 		return
 	}
 
 	id := c.GetInt("id")
 	group, err := model.GetUserGroup(id, true)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "获取用户分组失败"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Failed to get user group"})
 		return
 	}
 
 	payMoney := getUsdcPayMoney(req.Amount, group)
 	if payMoney < 0.01 {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值金额过低"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Top-up amount too low"})
 		return
 	}
 
@@ -206,49 +206,49 @@ func RequestUsdcAmount(c *gin.Context) {
 
 func RequestUsdcPay(c *gin.Context) {
 	if !isUsdcTopUpEnabled() {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "USDC 充值未启用"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "USDC top-up is not enabled"})
 		return
 	}
 
 	var req UsdcPayRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Amount <= 0 {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "参数错误"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Invalid parameters"})
 		return
 	}
 
 	chain := strings.ToLower(req.Chain)
 	if chain != "eth" && chain != "bsc" && chain != "base" && chain != "polygon" && chain != "tron" {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "不支持的链"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Unsupported chain"})
 		return
 	}
 
 	if req.Amount < int64(setting.UsdcMinTopUp) {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("充值数量不能小于 %d", setting.UsdcMinTopUp)})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("Top-up amount cannot be less than %d", setting.UsdcMinTopUp)})
 		return
 	}
 
 	id := c.GetInt("id")
 	user, err := model.GetUserById(id, false)
 	if err != nil || user == nil {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "用户不存在"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "User not found"})
 		return
 	}
 
 	_, _, receiver, decimals, requiredConfirmations := getUsdcChainConfig(chain)
 	if strings.TrimSpace(receiver) == "" {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "该链收款地址未配置"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Receiver address not configured for this chain"})
 		return
 	}
 
 	group, err := model.GetUserGroup(id, true)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "获取用户分组失败"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Failed to get user group"})
 		return
 	}
 
 	payMoney := getUsdcPayMoney(req.Amount, group)
 	if payMoney < 0.01 {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值金额过低"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Top-up amount too low"})
 		return
 	}
 
@@ -282,7 +282,7 @@ func RequestUsdcPay(c *gin.Context) {
 	}
 	if err := topUp.Insert(); err != nil {
 		logger.LogError(c.Request.Context(), fmt.Sprintf("USDC 创建充值订单失败 user_id=%d trade_no=%s amount=%d error=%q", id, tradeNo, req.Amount, err.Error()))
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "创建订单失败"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Failed to create order"})
 		return
 	}
 
@@ -308,55 +308,55 @@ func CancelUsdcTopUp(c *gin.Context) {
 		TradeNo string `json:"trade_no"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil || req.TradeNo == "" {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "参数错误"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Invalid parameters"})
 		return
 	}
 
 	userId := c.GetInt("id")
 	topUp := model.GetTopUpByTradeNo(req.TradeNo)
 	if topUp == nil {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值订单不存在"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Top-up order not found"})
 		return
 	}
 	if topUp.UserId != userId {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "无权操作该订单"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "No permission to operate this order"})
 		return
 	}
 	if topUp.Status != common.TopUpStatusPending {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "订单状态不允许取消"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Order status does not allow cancellation"})
 		return
 	}
 	if topUp.PaymentProvider != model.PaymentProviderUsdcEth && topUp.PaymentProvider != model.PaymentProviderUsdcBsc && topUp.PaymentProvider != model.PaymentProviderUsdcBase && topUp.PaymentProvider != model.PaymentProviderUsdcPolygon && topUp.PaymentProvider != model.PaymentProviderUsdcTron {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "订单类型不支持取消"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Order type does not support cancellation"})
 		return
 	}
 
 	topUp.Status = common.TopUpStatusCancelled
 	if err := topUp.Update(); err != nil {
 		logger.LogError(c.Request.Context(), fmt.Sprintf("USDC 取消订单失败 user_id=%d trade_no=%s error=%q", userId, req.TradeNo, err.Error()))
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "取消订单失败"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Failed to cancel order"})
 		return
 	}
 
 	logger.LogInfo(c.Request.Context(), fmt.Sprintf("USDC 取消订单成功 user_id=%d trade_no=%s", userId, req.TradeNo))
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "success", "data": "订单已取消"})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "success", "data": "Order cancelled"})
 }
 
 func VerifyUsdcTransaction(c *gin.Context) {
 	var req UsdcVerifyRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.TradeNo == "" || req.TxHash == "" {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "参数错误"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Invalid parameters"})
 		return
 	}
 
 	topUp := model.GetTopUpByTradeNo(req.TradeNo)
 	if topUp == nil {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值订单不存在"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Top-up order not found"})
 		return
 	}
 
 	if topUp.Status != common.TopUpStatusPending {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值订单状态错误"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Invalid order status"})
 		return
 	}
 
@@ -373,7 +373,7 @@ func VerifyUsdcTransaction(c *gin.Context) {
 
 	rpcURL, contractAddress, receiver, decimals, requiredConfirmations := getUsdcChainConfig(chain)
 	if strings.TrimSpace(rpcURL) == "" {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "该链 RPC 未配置"})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "RPC not configured for this chain"})
 		return
 	}
 
@@ -409,7 +409,7 @@ func VerifyUsdcTransaction(c *gin.Context) {
 	if confirmations < requiredConfirmations {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "error",
-			"data":  fmt.Sprintf("等待更多区块确认，当前 %d/%d", confirmations, requiredConfirmations),
+			"data":  fmt.Sprintf("Waiting for more block confirmations, current %d/%d", confirmations, requiredConfirmations),
 		})
 		return
 	}
@@ -421,7 +421,7 @@ func VerifyUsdcTransaction(c *gin.Context) {
 	maxAccepted := expectedAmount.Add(tolerance)
 
 	if actualAmount.LessThan(minAccepted) {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("到账金额不足，预期 %.6f，实际 %.6f", topUp.Money, amount)})
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": fmt.Sprintf("Insufficient amount received, expected %.6f, actual %.6f", topUp.Money, amount)})
 		return
 	}
 	if actualAmount.GreaterThan(maxAccepted) {
@@ -438,7 +438,7 @@ func VerifyUsdcTransaction(c *gin.Context) {
 	}
 
 	logger.LogInfo(c.Request.Context(), fmt.Sprintf("USDC 充值成功 trade_no=%s tx=%s amount=%.6f confirmations=%d", req.TradeNo, txHash, amount, confirmations))
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "success", "data": "充值成功"})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "success", "data": "Top-up successful"})
 }
 
 func verifyUsdcTransferOnTron(apiURL, contractAddress, receiver, txHash string, decimals int) (float64, int, error) {
@@ -447,7 +447,7 @@ func verifyUsdcTransferOnTron(apiURL, contractAddress, receiver, txHash string, 
 	}
 	txHash = strings.TrimSpace(txHash)
 	if txHash == "" {
-		return 0, 0, errors.New("交易哈希为空")
+		return 0, 0, errors.New("Transaction hash is empty")
 	}
 
 	tronApiKey := strings.TrimSpace(setting.TronGridApiKey)
@@ -456,7 +456,7 @@ func verifyUsdcTransferOnTron(apiURL, contractAddress, receiver, txHash string, 
 	infoBody := fmt.Sprintf(`{"value":"%s"}`, txHash)
 	infoReq, err := http.NewRequest(http.MethodPost, infoURL, strings.NewReader(infoBody))
 	if err != nil {
-		return 0, 0, fmt.Errorf("构建交易信息请求失败: %w", err)
+		return 0, 0, fmt.Errorf("Failed to build transaction info request: %w", err)
 	}
 	infoReq.Header.Set("Content-Type", "application/json")
 	infoReq.Header.Set("Accept", "application/json")
@@ -465,12 +465,12 @@ func verifyUsdcTransferOnTron(apiURL, contractAddress, receiver, txHash string, 
 	}
 	infoResp, err := http.DefaultClient.Do(infoReq)
 	if err != nil {
-		return 0, 0, fmt.Errorf("查询交易信息失败: %w", err)
+		return 0, 0, fmt.Errorf("Failed to query transaction info: %w", err)
 	}
 	defer infoResp.Body.Close()
 	infoRespBody, _ := io.ReadAll(infoResp.Body)
 	if infoResp.StatusCode != http.StatusOK {
-		return 0, 0, fmt.Errorf("查询交易信息失败: status=%d", infoResp.StatusCode)
+		return 0, 0, fmt.Errorf("Failed to query transaction info: status=%d", infoResp.StatusCode)
 	}
 	var txInfo struct {
 		ID          string `json:"id"`
@@ -485,23 +485,23 @@ func verifyUsdcTransferOnTron(apiURL, contractAddress, receiver, txHash string, 
 		} `json:"log"`
 	}
 	if err := common.UnmarshalJsonStr(string(infoRespBody), &txInfo); err != nil {
-		return 0, 0, fmt.Errorf("解析交易信息失败: %w", err)
+		return 0, 0, fmt.Errorf("Failed to parse transaction info: %w", err)
 	}
 	if txInfo.ID == "" {
-		return 0, 0, errors.New("交易不存在")
+		return 0, 0, errors.New("Transaction not found")
 	}
 	if txInfo.Receipt.Result != "SUCCESS" {
-		return 0, 0, errors.New("交易执行失败")
+		return 0, 0, errors.New("Transaction execution failed")
 	}
 
 	receiverBytes, err := troncommon.DecodeCheck(receiver)
 	if err != nil {
-		return 0, 0, fmt.Errorf("收款地址解析失败: %w", err)
+		return 0, 0, fmt.Errorf("Failed to decode receiver address: %w", err)
 	}
 	receiverHex := hex.EncodeToString(receiverBytes[1:])
 	contractBytes, err := troncommon.DecodeCheck(contractAddress)
 	if err != nil {
-		return 0, 0, fmt.Errorf("合约地址解析失败: %w", err)
+		return 0, 0, fmt.Errorf("Failed to decode contract address: %w", err)
 	}
 	contractHex := hex.EncodeToString(contractBytes[1:])
 
@@ -534,13 +534,13 @@ func verifyUsdcTransferOnTron(apiURL, contractAddress, receiver, txHash string, 
 		break
 	}
 	if matchedAmount == nil {
-		return 0, 0, errors.New("未找到向指定收款地址的 USDC 转账")
+		return 0, 0, errors.New("USDC transfer to specified receiver not found")
 	}
 
 	nowBlockURL := fmt.Sprintf("%s/wallet/getnowblock", strings.TrimRight(apiURL, "/"))
 	nowReq, err := http.NewRequest(http.MethodPost, nowBlockURL, nil)
 	if err != nil {
-		return 0, 0, fmt.Errorf("构建当前区块请求失败: %w", err)
+		return 0, 0, fmt.Errorf("Failed to build current block request: %w", err)
 	}
 	nowReq.Header.Set("Accept", "application/json")
 	if tronApiKey != "" {
@@ -548,12 +548,12 @@ func verifyUsdcTransferOnTron(apiURL, contractAddress, receiver, txHash string, 
 	}
 	nowResp, err := http.DefaultClient.Do(nowReq)
 	if err != nil {
-		return 0, 0, fmt.Errorf("查询当前区块失败: %w", err)
+		return 0, 0, fmt.Errorf("Failed to query current block: %w", err)
 	}
 	defer nowResp.Body.Close()
 	nowRespBody, _ := io.ReadAll(nowResp.Body)
 	if nowResp.StatusCode != http.StatusOK {
-		return 0, 0, fmt.Errorf("查询当前区块失败: status=%d", nowResp.StatusCode)
+		return 0, 0, fmt.Errorf("Failed to query current block: status=%d", nowResp.StatusCode)
 	}
 	var nowBlock struct {
 		BlockHeader struct {
@@ -563,7 +563,7 @@ func verifyUsdcTransferOnTron(apiURL, contractAddress, receiver, txHash string, 
 		} `json:"block_header"`
 	}
 	if err := common.UnmarshalJsonStr(string(nowRespBody), &nowBlock); err != nil {
-		return 0, 0, fmt.Errorf("解析当前区块失败: %w", err)
+		return 0, 0, fmt.Errorf("Failed to parse current block: %w", err)
 	}
 	confirmations := int(nowBlock.BlockHeader.RawData.Number - txInfo.BlockNumber)
 	if confirmations < 0 {
@@ -578,22 +578,22 @@ func verifyUsdcTransferOnTron(apiURL, contractAddress, receiver, txHash string, 
 func verifyUsdcTransferOnChain(ctx context.Context, rpcURL, contractAddress, receiver, txHash string, decimals int) (float64, int, error) {
 	client, err := ethclient.DialContext(ctx, rpcURL)
 	if err != nil {
-		return 0, 0, fmt.Errorf("连接节点失败: %w", err)
+		return 0, 0, fmt.Errorf("Failed to connect to node: %w", err)
 	}
 	defer client.Close()
 
 	txHashBytes := ethcommon.HexToHash(txHash)
 	receipt, err := client.TransactionReceipt(ctx, txHashBytes)
 	if err != nil {
-		return 0, 0, fmt.Errorf("获取交易回执失败: %w", err)
+		return 0, 0, fmt.Errorf("Failed to get transaction receipt: %w", err)
 	}
 
 	if receipt.Status != 1 {
-		return 0, 0, errors.New("交易执行失败")
+		return 0, 0, errors.New("Transaction execution failed")
 	}
 
 	if len(receipt.Logs) == 0 {
-		return 0, 0, errors.New("交易中没有事件日志")
+		return 0, 0, errors.New("No event logs in transaction")
 	}
 
 	contractAddr := ethcommon.HexToAddress(contractAddress)
@@ -628,12 +628,12 @@ func verifyUsdcTransferOnChain(ctx context.Context, rpcURL, contractAddress, rec
 	}
 
 	if matchedAmount == nil {
-		return 0, 0, errors.New("未找到向指定收款地址的 USDC 转账")
+		return 0, 0, errors.New("USDC transfer to specified receiver not found")
 	}
 
 	currentBlock, err := client.BlockNumber(ctx)
 	if err != nil {
-		return 0, 0, fmt.Errorf("获取当前区块失败: %w", err)
+		return 0, 0, fmt.Errorf("Failed to get current block: %w", err)
 	}
 
 	confirmations := int(currentBlock - receipt.BlockNumber.Uint64())
