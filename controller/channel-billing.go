@@ -386,6 +386,8 @@ func updateChannelBalance(channel *model.Channel) (float64, error) {
 		return updateChannelOpenRouterBalance(channel)
 	case constant.ChannelTypeMoonshot:
 		return updateChannelMoonshotBalance(channel)
+	case constant.ChannelTypeMiMo:
+		return 0, errors.New("MiMo does not support balance query")
 	default:
 		return 0, errors.New("尚未实现")
 	}
