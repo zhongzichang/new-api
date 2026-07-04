@@ -450,6 +450,119 @@ func VerifyUsdcTransaction(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "success", "data": "Top-up successful"})
 }
 
+func VerifyUsdcTransactionPublic(c *gin.Context) {
+	var req UsdcVerifyRequest
+	if err := c.ShouldBindJSON(&req); err != nil || req.TradeNo == "" || req.TxHash == "" {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Invalid parameters"})
+		return
+	}
+
+	topUp := model.GetTopUpByTradeNo(req.TradeNo)
+	if topUp == nil {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Top-up order not found"})
+		return
+	}
+
+	if topUp.Status != common.TopUpStatusPending {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Invalid order status"})
+		return
+	}
+
+	if topUp.PaymentProvider != model.PaymentProviderUsdcEth && topUp.PaymentProvider != model.PaymentProviderUsdcBsc && topUp.PaymentProvider != model.PaymentProviderUsdcBase && topUp.PaymentProvider != model.PaymentProviderUsdcPolygon && topUp.PaymentProvider != model.PaymentProviderUsdcTron {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Not a USDC top-up order"})
+		return
+	}
+
+	chain := "eth"
+	if topUp.PaymentProvider == model.PaymentProviderUsdcBsc {
+		chain = "bsc"
+	} else if topUp.PaymentProvider == model.PaymentProviderUsdcBase {
+		chain = "base"
+	} else if topUp.PaymentProvider == model.PaymentProviderUsdcPolygon {
+		chain = "polygon"
+	} else if topUp.PaymentProvider == model.PaymentProviderUsdcTron {
+		chain = "tron"
+	}
+
+	rpcURL, contractAddress, receiver, decimals, requiredConfirmations := getUsdcChainConfig(chain)
+	if strings.TrimSpace(rpcURL) == "" {
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "RPC not configured for this chain"})
+		return
+	}
+
+	txHash := strings.TrimSpace(req.TxHash)
+
+	var amount float64
+	var confirmations int
+	var err error
+	if chain == "tron" {
+		amount, confirmations, err = verifyUsdcTransferOnTron(rpcURL, contractAddress, receiver, txHash, decimals)
+	} else {
+		if !strings.HasPrefix(txHash, "0x") {
+			txHash = "0x" + txHash
+		}
+		amount, confirmations, err = verifyUsdcTransferOnChain(context.Background(), rpcURL, contractAddress, receiver, txHash, decimals)
+	}
+	if err != nil {
+		logger.LogWarn(c.Request.Context(), fmt.Sprintf("USDC On-chain verification failed trade_no=%s tx=%s error=%q", req.TradeNo, txHash, err.Error()))
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": err.Error()})
+		return
+	}
+
+	if topUp.TxHash == "" {
+		topUp.TxHash = txHash
+	}
+	if topUp.Confirmations != confirmations {
+		topUp.Confirmations = confirmations
+		if err := topUp.Update(); err != nil {
+			logger.LogError(c.Request.Context(), fmt.Sprintf("USDC Failed to update confirmation count trade_no=%s error=%q", req.TradeNo, err.Error()))
+		}
+	}
+
+	if confirmations < requiredConfirmations {
+		c.JSON(http.StatusOK, gin.H{
+			"message":         "error",
+			"code":            "PENDING_CONFIRMATIONS",
+			"confirmations":   confirmations,
+			"required":        requiredConfirmations,
+			"data":            fmt.Sprintf("Waiting for more block confirmations, current %d/%d", confirmations, requiredConfirmations),
+		})
+		return
+	}
+
+	expectedAmount := decimal.NewFromFloat(topUp.Money)
+	actualAmount := decimal.NewFromFloat(amount)
+	tolerance := expectedAmount.Mul(decimal.NewFromFloat(0.01))
+	minAccepted := expectedAmount.Sub(tolerance)
+	maxAccepted := expectedAmount.Add(tolerance)
+
+	if actualAmount.LessThan(minAccepted) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "error",
+			"code":    "INSUFFICIENT_AMOUNT",
+			"expected": topUp.Money,
+			"actual":   amount,
+			"data":    fmt.Sprintf("Insufficient amount received, expected %.6f, actual %.6f", topUp.Money, amount),
+		})
+		return
+	}
+	if actualAmount.GreaterThan(maxAccepted) {
+		logger.LogInfo(c.Request.Context(), fmt.Sprintf("USDC Received amount exceeds expected trade_no=%s expected=%.6f actual=%.6f", req.TradeNo, topUp.Money, amount))
+	}
+
+	LockOrder(req.TradeNo)
+	defer UnlockOrder(req.TradeNo)
+
+	if err := model.RechargeUsdc(req.TradeNo, txHash, c.ClientIP()); err != nil {
+		logger.LogError(c.Request.Context(), fmt.Sprintf("USDC Top-up failed trade_no=%s tx=%s error=%q", req.TradeNo, txHash, err.Error()))
+		c.JSON(http.StatusOK, gin.H{"message": "error", "data": err.Error()})
+		return
+	}
+
+	logger.LogInfo(c.Request.Context(), fmt.Sprintf("USDC Top-up successful trade_no=%s tx=%s amount=%.6f confirmations=%d", req.TradeNo, txHash, amount, confirmations))
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "success", "data": "Top-up successful"})
+}
+
 func verifyUsdcTransferOnTron(apiURL, contractAddress, receiver, txHash string, decimals int) (float64, int, error) {
 	if strings.TrimSpace(apiURL) == "" {
 		apiURL = "https://api.trongrid.io"
