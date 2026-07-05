@@ -465,7 +465,7 @@ func validateChannel(channel *model.Channel, isAdd bool) error {
 	// 如果是添加操作，检查 channel 和 key 是否为空
 	if isAdd {
 		if channel == nil || channel.Key == "" {
-			return fmt.Errorf("channel cannot be empty")
+			return fmt.Errorf("API key is required")
 		}
 
 		// 检查Model名称长度是否超过 255
