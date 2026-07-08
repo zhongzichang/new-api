@@ -215,7 +215,7 @@ func (s *BillingSession) preConsume(c *gin.Context, quota int) *types.NewAPIErro
 		}
 		// TODO: model 层应定义哨兵错误（如 ErrNoActiveSubscription），用 errors.Is 替代字符串匹配
 		errMsg := err.Error()
-		if strings.Contains(errMsg, "no active subscription") || strings.Contains(errMsg, "subscription quota insufficient") {
+		if strings.Contains(errMsg, "no active subscription") || strings.Contains(errMsg, "subscription credit insufficient") {
 			return types.NewErrorWithStatusCode(fmt.Errorf("Subscription quota insufficient or not configured: %s", errMsg), types.ErrorCodeInsufficientUserQuota, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 		}
 		return types.NewError(err, types.ErrorCodeUpdateDataError, types.ErrOptionWithSkipRetry())
@@ -354,13 +354,13 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 		}
 		if userQuota <= 0 {
 			return nil, types.NewErrorWithStatusCode(
-				fmt.Errorf("Insufficient quota, remaining: %s", logger.FormatQuota(userQuota)),
+				fmt.Errorf("Insufficient credit, remaining: %s", logger.FormatQuota(userQuota)),
 				types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 				types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 		}
 		if userQuota-preConsumedQuota < 0 {
 			return nil, types.NewErrorWithStatusCode(
-				fmt.Errorf("Insufficient quota for pre-consumption, remaining: %s, required: %s", logger.FormatQuota(userQuota), logger.FormatQuota(preConsumedQuota)),
+				fmt.Errorf("Insufficient credit for pre-consumption, remaining: %s, required: %s", logger.FormatQuota(userQuota), logger.FormatQuota(preConsumedQuota)),
 				types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 				types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 		}

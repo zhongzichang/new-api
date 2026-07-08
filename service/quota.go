@@ -478,14 +478,14 @@ func checkAndSendQuotaNotify(relayInfo *relaycommon.RelayInfo, quota int, preCon
 
 			if notifyType == dto.NotifyTypeBark {
 				// Bark推送使用简短文本，不支持HTML
-				content = "{{value}}, remaining quota: {{value}}, please top up soon"
+				content = "{{value}}, remaining credit: {{value}}, please top up soon"
 				values = []interface{}{prompt, logger.FormatQuota(relayInfo.UserQuota)}
 			} else if notifyType == dto.NotifyTypeGotify {
-				content = "{{value}}, current remaining quota is {{value}}, please top up soon."
+				content = "{{value}}, current remaining credit is {{value}}, please top up soon."
 				values = []interface{}{prompt, logger.FormatQuota(relayInfo.UserQuota)}
 			} else {
 				// 默认内容格式，适用于Email和Webhook（支持HTML）
-				content = "{{value}}, current remaining quota is {{value}}. To avoid service disruption, please top up soon.<br/>Top-up link: <a href='{{value}}'>{{value}}</a>"
+				content = "{{value}}, current remaining credit is {{value}}. To avoid service disruption, please top up soon.<br/>Top-up link: <a href='{{value}}'>{{value}}</a>"
 				values = []interface{}{prompt, logger.FormatQuota(relayInfo.UserQuota), topUpLink, topUpLink}
 			}
 
@@ -518,7 +518,7 @@ func checkAndSendSubscriptionQuotaNotify(relayInfo *relaycommon.RelayInfo) {
 			return
 		}
 
-		prompt := "Your subscription quota is running low"
+		prompt := "Your subscription credit is running low"
 		topUpLink := PaymentReturnURL("/console/topup")
 
 		var content string
@@ -529,18 +529,18 @@ func checkAndSendSubscriptionQuotaNotify(relayInfo *relaycommon.RelayInfo) {
 		}
 
 		if notifyType == dto.NotifyTypeBark {
-			content = "{{value}}, remaining quota: {{value}}, please top up soon"
+			content = "{{value}}, remaining credit: {{value}}, please top up soon"
 			values = []interface{}{prompt, logger.FormatQuota(int(remaining))}
 		} else if notifyType == dto.NotifyTypeGotify {
-			content = "{{value}}, current remaining quota is {{value}}, please top up soon."
+			content = "{{value}}, current remaining credit is {{value}}, please top up soon."
 			values = []interface{}{prompt, logger.FormatQuota(int(remaining))}
 		} else {
-			content = "{{value}}, current remaining quota is {{value}}. To avoid service disruption, please top up soon.<br/>Top-up link: <a href='{{value}}'>{{value}}</a>"
+			content = "{{value}}, current remaining credit is {{value}}. To avoid service disruption, please top up soon.<br/>Top-up link: <a href='{{value}}'>{{value}}</a>"
 			values = []interface{}{prompt, logger.FormatQuota(int(remaining)), topUpLink, topUpLink}
 		}
 
 		if err := NotifyUser(relayInfo.UserId, relayInfo.UserEmail, relayInfo.UserSetting, dto.NewNotify(dto.NotifyTypeQuotaExceed, prompt, content, values)); err != nil {
-			common.SysError(fmt.Sprintf("failed to send subscription quota notify to user %d: %s", relayInfo.UserId, err.Error()))
+			common.SysError(fmt.Sprintf("failed to send subscription credit notify to user %d: %s", relayInfo.UserId, err.Error()))
 		}
 	})
 }
