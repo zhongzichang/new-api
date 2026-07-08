@@ -284,12 +284,35 @@ func SendEmailVerification(c *gin.Context) {
 		})
 		return
 	}
-	code := common.GenerateVerificationCode(8)
+	code := common.GenerateVerificationCode(6)
 	common.RegisterVerificationCodeWithKey(email, code, common.EmailVerificationPurpose)
-	subject := fmt.Sprintf("%s Email Verification", common.SystemName)
-	content := fmt.Sprintf("<p>Hello, you are verifying your email for %s.</p>"+
-		"<p>Your verification code is: <strong>%s</strong></p>"+
-		"<p>This code is valid for %d minutes. If you did not request this, please ignore this email.</p>", common.SystemName, code, common.VerificationValidMinutes)
+	subject := fmt.Sprintf("[%s] Email Verification", common.SystemName)
+	content := fmt.Sprintf(`
+		<div style="font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace; max-width: 480px; margin: 0 auto; padding: 32px; background: #0f0f23; color: #e2e8f0;">
+			<div style="text-align: center; margin-bottom: 24px;">
+				<span style="font-size: 24px; font-weight: bold; color: #8b5cf6;">%s</span>
+				<span style="font-size: 12px; color: #64748b; display: block; margin-top: 4px;">Email Verification</span>
+			</div>
+			
+			<div style="background: #1a1a2e; border: 1px solid #2d2d44; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+				<p style="color: #94a3b8; margin: 0 0 16px 0; font-size: 14px;">Your verification code:</p>
+				<div style="background: #0d1117; border: 2px dashed #30363d; border-radius: 8px; padding: 20px; text-align: center;">
+					<span style="font-size: 36px; font-weight: bold; color: #8b5cf6; letter-spacing: 8px; font-family: 'SF Mono', monospace;">%s</span>
+				</div>
+				<p style="color: #64748b; margin: 16px 0 0 0; font-size: 12px;">Valid for %d minutes</p>
+			</div>
+			
+			<div style="background: #1a1a2e; border: 1px solid #2d2d44; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+				<p style="color: #94a3b8; margin: 0; font-size: 12px; line-height: 1.6;">
+					If you did not request this verification, please ignore this email. Do not share this code with anyone.
+				</p>
+			</div>
+			
+			<div style="text-align: center; padding-top: 16px; border-top: 1px solid #2d2d44;">
+				<p style="color: #4b5563; font-size: 11px; margin: 0;">This is an automated message from %s</p>
+			</div>
+		</div>
+	`, common.SystemName, code, common.VerificationValidMinutes, common.SystemName)
 	err := common.SendEmail(subject, email, content)
 	if err != nil {
 		common.ApiError(c, err)
@@ -315,11 +338,33 @@ func SendPasswordResetEmail(c *gin.Context) {
 		code := common.GenerateVerificationCode(0)
 		common.RegisterVerificationCodeWithKey(email, code, common.PasswordResetPurpose)
 		link := fmt.Sprintf("%s/user/reset?email=%s&token=%s", system_setting.ServerAddress, email, code)
-		subject := fmt.Sprintf("%s Password Reset", common.SystemName)
-		content := fmt.Sprintf("<p>Hello, you are resetting your password for %s.</p>"+
-			"<p>Click <a href='%s'>here</a> to reset your password.</p>"+
-			"<p>If the link doesn't work, try copying the URL below into your browser:<br> %s </p>"+
-			"<p>This link is valid for %d minutes. If you did not request this, please ignore this email.</p>", common.SystemName, link, link, common.VerificationValidMinutes)
+		subject := fmt.Sprintf("[%s] Password Reset", common.SystemName)
+		content := fmt.Sprintf(`
+			<div style="font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace; max-width: 480px; margin: 0 auto; padding: 32px; background: #0f0f23; color: #e2e8f0;">
+				<div style="text-align: center; margin-bottom: 24px;">
+					<span style="font-size: 24px; font-weight: bold; color: #8b5cf6;">%s</span>
+					<span style="font-size: 12px; color: #64748b; display: block; margin-top: 4px;">Password Reset</span>
+				</div>
+				
+				<div style="background: #1a1a2e; border: 1px solid #2d2d44; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+					<p style="color: #94a3b8; margin: 0 0 16px 0; font-size: 14px;">Click the button below to reset your password:</p>
+					<div style="text-align: center; margin: 24px 0;">
+						<a href="%s" style="display: inline-block; background: #8b5cf6; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px;">Reset Password</a>
+					</div>
+					<p style="color: #64748b; margin: 0; font-size: 12px; word-break: break-all;">Or copy this link: %s</p>
+				</div>
+				
+				<div style="background: #1a1a2e; border: 1px solid #2d2d44; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+					<p style="color: #94a3b8; margin: 0; font-size: 12px; line-height: 1.6;">
+						This link is valid for %d minutes. If you did not request this, please ignore this email.
+					</p>
+				</div>
+				
+				<div style="text-align: center; padding-top: 16px; border-top: 1px solid #2d2d44;">
+					<p style="color: #4b5563; font-size: 11px; margin: 0;">This is an automated message from %s</p>
+				</div>
+			</div>
+		`, common.SystemName, link, link, common.VerificationValidMinutes, common.SystemName)
 		err := common.SendEmail(subject, email, content)
 		if err != nil {
 			logger.LogError(c.Request.Context(), fmt.Sprintf("failed to send password reset email to %s: %s", email, err.Error()))
