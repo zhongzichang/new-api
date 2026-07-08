@@ -6,6 +6,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/logger"
+	"github.com/QuantumNous/new-api/setting"
 
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
@@ -84,8 +85,16 @@ func (topUp *TopUp) Update() error {
 
 func expirePendingTopUps(tx *gorm.DB) error {
 	now := common.GetTimestamp()
+	// Default timeout: 60 minutes if not configured
+	timeoutMinutes := 60
+	if setting.UsdtTimeoutMinutes > 0 {
+		timeoutMinutes = setting.UsdtTimeoutMinutes
+	} else if setting.UsdcTimeoutMinutes > 0 {
+		timeoutMinutes = setting.UsdcTimeoutMinutes
+	}
+	cutoff := now - int64(timeoutMinutes*60)
 	return tx.Model(&TopUp{}).
-		Where("status = ? AND complete_time > 0 AND complete_time <= ?", common.TopUpStatusPending, now).
+		Where("status = ? AND create_time > 0 AND create_time <= ?", common.TopUpStatusPending, cutoff).
 		Updates(map[string]interface{}{
 			"status":        common.TopUpStatusExpired,
 			"complete_time": now,
