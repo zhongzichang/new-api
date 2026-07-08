@@ -236,7 +236,7 @@ func SendEmailVerification(c *gin.Context) {
 	if err := common.Validate.Var(email, "required,email"); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": "无效的parameter",
+			"message": "Invalid parameter",
 		})
 		return
 	}
@@ -271,7 +271,7 @@ func SendEmailVerification(c *gin.Context) {
 		if containsSpecialSymbols {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"message": "管理员已enabledemail地址别名限制，您的email地址由于包含特殊符号而被拒绝。",
+				"message": "Email alias restriction is enabled. Your email address was rejected because it contains special symbols.",
 			})
 			return
 		}
@@ -307,7 +307,7 @@ func SendPasswordResetEmail(c *gin.Context) {
 	if err := common.Validate.Var(email, "required,email"); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": "无效的parameter",
+			"message": "Invalid parameter",
 		})
 		return
 	}
