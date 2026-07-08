@@ -85,11 +85,12 @@ func (topUp *TopUp) Update() error {
 
 func expirePendingTopUps(tx *gorm.DB) error {
 	now := common.GetTimestamp()
-	// Default timeout: 60 minutes if not configured
+	// Use the larger of USDT/USDC timeout, default 60 minutes
 	timeoutMinutes := 60
-	if setting.UsdtTimeoutMinutes > 0 {
+	if setting.UsdtTimeoutMinutes > timeoutMinutes {
 		timeoutMinutes = setting.UsdtTimeoutMinutes
-	} else if setting.UsdcTimeoutMinutes > 0 {
+	}
+	if setting.UsdcTimeoutMinutes > timeoutMinutes {
 		timeoutMinutes = setting.UsdcTimeoutMinutes
 	}
 	cutoff := now - int64(timeoutMinutes*60)
